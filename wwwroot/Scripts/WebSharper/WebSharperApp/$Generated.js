@@ -1,7 +1,5 @@
-import { Some } from "../WebSharper.StdLib/Microsoft.FSharp.Core.FSharpOption`1.js"
-import { LoadLocalTemplates, NamedTemplate } from "../WebSharper.UI/WebSharper.UI.Client.Templates.js"
-export function mainform(h){
-  let n=Some("mainform");
-  LoadLocalTemplates("main");
-  return h?NamedTemplate("main", n, h):void 0;
+import { DecodeUnion, Id } from "../WebSharper.Web/WebSharper.ClientSideJson.Provider.js"
+let Decoder_AuthResult;
+export function DecodeJson_AuthResult(){
+  return Decoder_AuthResult?Decoder_AuthResult:Decoder_AuthResult=(DecodeUnion(void 0, "$", [[0, [["$0", "Item", Id(), 0]]], [1, [["$0", "Item1", Id(), 0], ["$1", "Item2", Id(), 0]]], [2, []], [3, [["$0", "Item", Id(), 0]]]]))();
 }

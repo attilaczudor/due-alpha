@@ -10,6 +10,9 @@ open WebSharperApp
 let main args =
     let builder = WebApplication.CreateBuilder(args)
     
+    // Initialize Database
+    Database.InitDb()
+
     // Add services to the container.
     builder.Services.AddWebSharper()
         .AddAuthentication("WebSharper")
@@ -26,9 +29,7 @@ let main args =
         |> ignore
 
     app.UseHttpsRedirection()
-#if DEBUG        
-        .UseWebSharperScriptRedirect(startVite = false)
-#endif
+
         .UseAuthentication()
         .UseStaticFiles()
         .UseWebSharper(fun ws -> ws.Sitelet(Site.Main) |> ignore)
