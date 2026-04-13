@@ -16,7 +16,13 @@ let main args =
     // Add services to the container.
     builder.Services.AddWebSharper()
         .AddAuthentication("WebSharper")
-        .AddCookie("WebSharper", fun options -> ())
+        .AddCookie("WebSharper", fun options -> 
+            options.Cookie.HttpOnly <- true
+            options.Cookie.SecurePolicy <- Microsoft.AspNetCore.Http.CookieSecurePolicy.Always
+            options.Cookie.SameSite <- Microsoft.AspNetCore.Http.SameSiteMode.Strict
+            options.ExpireTimeSpan <- System.TimeSpan.FromDays(7.0)
+            options.SlidingExpiration <- true
+        )
     |> ignore
 
     let app = builder.Build()
@@ -28,9 +34,17 @@ let main args =
             .UseHsts()
         |> ignore
 
-    app.UseHttpsRedirection()
+    app.UseHttpsRedirection() |> ignore
 
-        .UseAuthentication()
+    app.Use(fun (context: HttpContext) (next: Func<System.Threading.Tasks.Task>) ->
+        context.Response.Headers.Append("X-Content-Type-Options", "nosniff")
+        context.Response.Headers.Append("X-Frame-Options", "DENY")
+        context.Response.Headers.Append("X-XSS-Protection", "1; mode=block")
+        context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin")
+        next.Invoke()
+    ) |> ignore
+
+    app.UseAuthentication()
         .UseStaticFiles()
         .UseWebSharper(fun ws -> ws.Sitelet(Site.Main) |> ignore)
     |> ignore

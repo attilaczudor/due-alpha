@@ -5,7 +5,8 @@ body {
 }
 .neo-flat {
   background-color: #e0e5ec;
-  box-shadow: 9px 9px 16px rgb(163,177,198,0.6), -9px -9px 16px rgba(255,255,255, 0.5);
+  box-shadow: 10px 10px 20px rgb(163,177,198,0.7), -10px -10px 20px rgba(255,255,255, 0.6);
+  transition: all 0.3s ease;
 }
 .neo-pressed {
   background-color: #e0e5ec;
@@ -17,7 +18,20 @@ body {
   transition: all 0.2s ease-in-out;
 }
 .neo-button:active {
-  box-shadow: inset 4px 4px 8px 0 rgba(163, 177, 198, 0.7), inset -4px -4px 8px 0 rgba(255, 255, 255, 0.8);
+  box-shadow: inset 4px 4px 8px 0 rgba(163, 177, 198, 0.7), inset -6px -6px 10px 0 rgba(255, 255, 255, 0.8);
+}
+.neo-nav-item {
+  background-color: transparent;
+  border: 1px solid transparent;
+}
+.neo-nav-item:hover {
+  background-color: #e0e5ec;
+  box-shadow: 10px 10px 20px rgb(163,177,198,0.7), -10px -10px 20px rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px);
+}
+.neo-nav-active {
+  background-color: #e0e5ec;
+  box-shadow: inset 6px 6px 10px 0 rgba(163, 177, 198, 0.7), inset -6px -6px 10px 0 rgba(255, 255, 255, 0.8);
 }
 .neo-button-blue {
   background-color: #3b82f6; /* Tailwind Blue 500 */
@@ -30,4 +44,26 @@ body {
 }
 .neo-button-blue:active {
   box-shadow: inset 4px 4px 8px 0 rgba(30, 58, 138, 0.5), inset -4px -4px 8px 0 rgba(96, 165, 250, 0.5);
+}
+
+.toast-container {
+  position: fixed;
+  bottom: 2.5rem;
+  right: 2.5rem;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.toast-item {
+  pointer-events: auto;
+  min-width: 320px;
+}
+
+@keyframes slide-in-up {
+  from { transform: translateY(2rem); opacity: 0; filter: blur(4px); }
+  to { transform: translateY(0); opacity: 1; filter: blur(0); }
+}
+
+.animate-toast {
+  animation: slide-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
