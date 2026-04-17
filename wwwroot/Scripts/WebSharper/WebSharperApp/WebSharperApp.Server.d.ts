@@ -1,12 +1,26 @@
-import GlobalSettings from "./WebSharperApp.GlobalSettings"
+import UserHealthSettings from "./WebSharperApp.UserHealthSettings"
 import { AuthResult } from "./WebSharperApp.AuthResult"
 import AsyncBody from "../WebSharper.StdLib/WebSharper.Concurrency.AsyncBody`1"
+import GlobalSettings from "./WebSharperApp.GlobalSettings"
+import PublicProfile from "./WebSharperApp.PublicProfile"
+import { FSharpOption } from "../WebSharper.StdLib/Microsoft.FSharp.Core.FSharpOption`1"
 import MealPlanItem from "./WebSharperApp.MealPlanItem"
 import RecipeEntry from "./WebSharperApp.RecipeEntry"
 import ProductItem from "./WebSharperApp.ProductItem"
 import DailyRecord from "./WebSharperApp.DailyRecord"
 import CalendarEvent from "./WebSharperApp.CalendarEvent"
+export function SaveHealthSettings(h:UserHealthSettings):((a:AsyncBody<AuthResult>) => void)
+export function GetHealthSettings():((a:AsyncBody<UserHealthSettings>) => void)
+export function ChangePassword(newPassword:string):((a:AsyncBody<AuthResult>) => void)
+export function SetProfileVisibility(isPublic:boolean):((a:AsyncBody<AuthResult>) => void)
 export function UpdateUserSettings(s:GlobalSettings):((a:AsyncBody<AuthResult>) => void)
+export function UploadAvatar(base64Data:string):((a:AsyncBody<AuthResult>) => void)
+export function GetPublicProfile(username:string):((a:AsyncBody<FSharpOption<PublicProfile>>) => void)
+export function VerifyEmailChange(token:string):((a:AsyncBody<AuthResult>) => void)
+export function CancelEmailChange():((a:AsyncBody<AuthResult>) => void)
+export function RequestEmailChange(newEmail:string):((a:AsyncBody<AuthResult>) => void)
+export function SaveUsername(newUsername:string):((a:AsyncBody<AuthResult>) => void)
+export function CheckUsernameAvailability(username:string):((a:AsyncBody<boolean>) => void)
 export function GetUserSettings():((a:AsyncBody<GlobalSettings>) => void)
 export function AddMealPlan(m:MealPlanItem):((a:AsyncBody<AuthResult>) => void)
 export function GetMealPlansRange(startDate:number, endDate:number):((a:AsyncBody<(MealPlanItem)[]>) => void)

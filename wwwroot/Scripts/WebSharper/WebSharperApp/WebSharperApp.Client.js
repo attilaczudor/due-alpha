@@ -1,10 +1,10 @@
+import Doc from "../WebSharper.UI/WebSharper.UI.Doc.js"
+import Attr from "../WebSharper.UI/WebSharper.UI.Attr.js"
 import Var from "../WebSharper.UI/WebSharper.UI.Var.js"
 import { Const, Map, Sink, Map2, Map3 } from "../WebSharper.UI/WebSharper.UI.View.js"
 import { DatePortion, Create, AddMonths, AddYears } from "../WebSharper.StdLib/WebSharper.DateTimeHelpers.js"
 import { StartImmediate, Delay, Bind, Zero, Sleep } from "../WebSharper.StdLib/WebSharper.Concurrency.js"
-import { GetProducts, CheckAuthState, AddProduct, DeleteProduct, GetHealthRecords, AddHealthRecord, GetRecipes, AddRecipe, GetUserSettings, GetCalendarEvents, AddCalendarEvent, GetMealPlansRange, AddMealPlan, UpdateUserSettings, UpdateUsername, Logout, ResetPassword, AttemptMagicLogin, AttemptVerifyEmail, TriggerMagicLink, RegisterUser, LoginUser } from "./WebSharperApp.Server.js"
-import Doc from "../WebSharper.UI/WebSharper.UI.Doc.js"
-import Attr from "../WebSharper.UI/WebSharper.UI.Attr.js"
+import { GetProducts, CheckAuthState, AddProduct, DeleteProduct, GetHealthRecords, AddHealthRecord, GetRecipes, AddRecipe, GetUserSettings, GetCalendarEvents, AddCalendarEvent, GetMealPlansRange, AddMealPlan, UpdateUserSettings, UpdateUsername, ResetPassword, AttemptMagicLogin, AttemptVerifyEmail, TriggerMagicLink, RegisterUser, LoginUser } from "./WebSharperApp.Server.js"
 import { ofSeq, ofArray, map, init, append } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.ListModule.js"
 import { delay, append as append_1, take, map as map_1, collect } from "../WebSharper.StdLib/Microsoft.FSharp.Collections.SeqModule.js"
 import { Button, Select, IconButton } from "./WebSharperApp.Client.Neo.js"
@@ -28,6 +28,12 @@ import { Success, Error } from "./WebSharperApp.Client.ToastType.js"
 import { Error as Error_1 } from "./WebSharperApp.AuthResult.js"
 import { New as New_6 } from "./WebSharperApp.Client.ToastMsg.js"
 import $StartupCode_Client from "./$StartupCode_Client.js"
+export function VerifyEmailChange(){
+  return Doc.Element("div", [Attr.Create("class", "p-10")], [Doc.TextNode("Verifying email change...")]);
+}
+export function ProfilePage(username){
+  return Doc.Element("div", [Attr.Create("class", "p-10")], [Doc.TextNode("Profile: "+username)]);
+}
 export function ProductsPage(){
   const username=Var.Create_1("Loading...");
   const season=Const(getSeason(DatePortion(Date.now())));
@@ -44,7 +50,7 @@ export function ProductsPage(){
     })), null);
   };
   StartImmediate(Delay(() => Bind(CheckAuthState(), (a) => a.$==1?(username.Set(a.$0),loadProducts(),Zero()):(globalThis.location.href="/",Zero()))), null);
-  return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Products", username, season), Doc.Element("div", [Attr.Create("class", "flex-1 p-10 overflow-y-auto w-full")], [Doc.Element("div", [Attr.Create("class", "flex justify-between items-center mb-8")], ofSeq(delay(() => append_1([Doc.Element("h1", [Attr.Create("class", "text-4xl font-extrabold text-gray-900")], [Doc.TextNode("Product Inventory")])], delay(() => {
+  return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Products", username, season, Const(false), () => { }), Doc.Element("div", [Attr.Create("class", "flex-1 p-10 overflow-y-auto w-full")], [Doc.Element("div", [Attr.Create("class", "flex justify-between items-center mb-8")], ofSeq(delay(() => append_1([Doc.Element("h1", [Attr.Create("class", "text-4xl font-extrabold text-gray-900")], [Doc.TextNode("Product Inventory")])], delay(() => {
     const accent=Map((s) => getSeasonTheme(s, "text", "600"), season);
     return[Button([Doc.TextNode("+ Add Product")], accent, () => {
       showAddModal.Set(true);
@@ -91,7 +97,7 @@ export function RecordsPage(){
     })), null);
   };
   StartImmediate(Delay(() => Bind(CheckAuthState(), (a) => a.$==1?(username.Set(a.$0),loadRecords(),Zero()):(globalThis.location.href="/",Zero()))), null);
-  return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Records", username, season), Doc.Element("div", [Attr.Create("class", "flex-1 p-10 overflow-y-auto w-full")], [Doc.Element("h1", [Attr.Create("class", "text-4xl font-extrabold text-gray-800 mb-6")], [Doc.TextNode("Health Records")]), Doc.Element("div", [Attr.Create("class", "neo-flat p-8 rounded-3xl mb-10")], [Doc.Element("h2", [Attr.Create("class", "text-xl font-bold mb-6 text-gray-700")], [Doc.TextNode("Add New Measurement")]), Doc.Element("div", [Attr.Create("class", "grid grid-cols-1 md:grid-cols-4 gap-6 items-end")], ofSeq(delay(() => append_1([Doc.Element("div", [], ofSeq(delay(() => append_1([Doc.Element("label", [Attr.Create("class", "block text-xs font-bold text-gray-700 mb-2 pl-2")], [Doc.TextNode("Type")])], delay(() => {
+  return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Records", username, season, Const(false), () => { }), Doc.Element("div", [Attr.Create("class", "flex-1 p-10 overflow-y-auto w-full")], [Doc.Element("h1", [Attr.Create("class", "text-4xl font-extrabold text-gray-800 mb-6")], [Doc.TextNode("Health Records")]), Doc.Element("div", [Attr.Create("class", "neo-flat p-8 rounded-3xl mb-10")], [Doc.Element("h2", [Attr.Create("class", "text-xl font-bold mb-6 text-gray-700")], [Doc.TextNode("Add New Measurement")]), Doc.Element("div", [Attr.Create("class", "grid grid-cols-1 md:grid-cols-4 gap-6 items-end")], ofSeq(delay(() => append_1([Doc.Element("div", [], ofSeq(delay(() => append_1([Doc.Element("label", [Attr.Create("class", "block text-xs font-bold text-gray-700 mb-2 pl-2")], [Doc.TextNode("Type")])], delay(() => {
     const accent=Map((s) => getSeasonTheme(s, "text", "600"), season);
     const accentBg=Map((s) => getSeasonTheme(s, "bg", "100"), season);
     return[Select(ofArray(["Blood Glucose", "Weight", "Blood Pressure", "Heart Rate"]), newType, (x) => x, accent, accentBg, false)];
@@ -120,7 +126,7 @@ export function RecipesPage(){
     })), null);
   };
   StartImmediate(Delay(() => Bind(CheckAuthState(), (a) => a.$==1?(username.Set(a.$0),loadRecipes(),Zero()):(globalThis.location.href="/",Zero()))), null);
-  return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Recipes", username, season), Doc.Element("div", [Attr.Create("class", "flex-1 p-10 overflow-y-auto w-full")], [Doc.Element("div", [Attr.Create("class", "flex justify-between items-center mb-8")], ofSeq(delay(() => append_1([Doc.Element("h1", [Attr.Create("class", "text-4xl font-extrabold text-gray-800")], [Doc.TextNode("My Recipes")])], delay(() => {
+  return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Recipes", username, season, Const(false), () => { }), Doc.Element("div", [Attr.Create("class", "flex-1 p-10 overflow-y-auto w-full")], [Doc.Element("div", [Attr.Create("class", "flex justify-between items-center mb-8")], ofSeq(delay(() => append_1([Doc.Element("h1", [Attr.Create("class", "text-4xl font-extrabold text-gray-800")], [Doc.TextNode("My Recipes")])], delay(() => {
     const accent=Map((s) => getSeasonTheme(s, "text", "600"), season);
     return[Button([Doc.TextNode("+ Add Recipe")], accent, () => {
       showAddModal.Set(true);
@@ -174,7 +180,9 @@ export function CalendarPage(){
     else if(m=="Year")refDate.Set(AddYears(refDate.Get(), toInt(multiplier)));
     else refDate.Set(refDate.Get()+multiplier*7*864E5);
   };
-  return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Calendar", username, currentSeason), Doc.Element("div", [Attr.Create("class", "flex-1 p-10 overflow-y-auto w-full flex flex-col")], [Doc.Element("div", [Attr.Create("class", "flex justify-between items-center mb-10")], [Doc.Element("div", [], [Doc.Element("h1", [Attr.Create("class", "text-4xl font-extrabold text-gray-900")], [Doc.EmbedView(Map((v) => Doc.TextNode(v+" View"), viewMode.View))]), Doc.Element("p", [Attr.Create("class", "text-gray-700 mt-2")], [Doc.EmbedView(Map2((_1, _2) => _1=="Year"?Doc.TextNode(DateFormatter(_2, "yyyy")):Doc.TextNode(DateFormatter(_2, "MMMM yyyy")), viewMode.View, refDate.View))])]), Doc.Element("div", [Attr.Create("class", "flex items-center space-x-6 relative")], [Button([Doc.TextNode("Today")], accent, () => {
+  return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Calendar", username, currentSeason, isSidebarOpen.View, () => {
+    isSidebarOpen.Set(false);
+  }), Doc.Element("div", [Attr.Create("class", "flex-1 p-10 overflow-y-auto w-full flex flex-col")], [Doc.Element("div", [Attr.Create("class", "flex justify-between items-center mb-10")], [Doc.Element("div", [], [Doc.Element("h1", [Attr.Create("class", "text-4xl font-extrabold text-gray-900")], [Doc.EmbedView(Map((v) => Doc.TextNode(v+" View"), viewMode.View))]), Doc.Element("p", [Attr.Create("class", "text-gray-700 mt-2")], [Doc.EmbedView(Map2((_1, _2) => _1=="Year"?Doc.TextNode(DateFormatter(_2, "yyyy")):Doc.TextNode(DateFormatter(_2, "MMMM yyyy")), viewMode.View, refDate.View))])]), Doc.Element("div", [Attr.Create("class", "flex items-center space-x-6 relative")], [Button([Doc.TextNode("Today")], accent, () => {
     refDate.Set(DatePortion(Date.now()));
   }), Select(ofArray(["Weekly", "Monthly", "Lunar", "Year"]), viewMode, (x) => x, accent, accentHover, true), Doc.Element("div", [Attr.Create("class", "flex space-x-3")], [IconButton(Doc.Verbatim("<svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15 19l-7-7 7-7\"></path></svg>"), accentHover, () => {
     step("prev");
@@ -283,7 +291,7 @@ export function PlannerPage(){
   };
   StartImmediate(Delay(() => Bind(CheckAuthState(), (a) => a.$==1?(username.Set(a.$0),loadPlannerData(),Zero()):(globalThis.location.href="/",Zero()))), null);
   const startOfWeek=Map((d) => d+(1-(toInt(Number((new Date(d)).getDay()))===0?7:toInt(Number((new Date(d)).getDay()))))*864E5, refDate.View);
-  return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Planner", username, currentSeason), Doc.Element("div", [Attr.Create("class", "flex-1 p-10 overflow-y-auto w-full")], [Doc.Element("div", [Attr.Create("class", "flex justify-between items-center mb-10")], [Doc.Element("h1", [Attr.Create("class", "text-4xl font-extrabold text-gray-900")], [Doc.TextNode("Meal Planner")]), Doc.Element("div", [Attr.Create("class", "flex space-x-3")], [IconButton(Doc.Verbatim("<svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15 19l-7-7 7-7\"></path></svg>"), accentHover, () => {
+  return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Planner", username, currentSeason, Const(false), () => { }), Doc.Element("div", [Attr.Create("class", "flex-1 p-10 overflow-y-auto w-full")], [Doc.Element("div", [Attr.Create("class", "flex justify-between items-center mb-10")], [Doc.Element("h1", [Attr.Create("class", "text-4xl font-extrabold text-gray-900")], [Doc.TextNode("Meal Planner")]), Doc.Element("div", [Attr.Create("class", "flex space-x-3")], [IconButton(Doc.Verbatim("<svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15 19l-7-7 7-7\"></path></svg>"), accentHover, () => {
     refDate.Set(refDate.Get()+-7*864E5);
     loadPlannerData();
   }), Button([Doc.TextNode("This Week")], accent, () => {
@@ -320,12 +328,15 @@ export function PlannerPage(){
     }, mealPlans.View))]), ofArray(["Breakfast", "Lunch", "Dinner"])))])]);
   }, startOfWeek)), ofSeq(range(0, 6))))])]);
 }
-export function SettingsPanel(){
+export function SettingsPanel(page){
+  Var.Create_1(null);
+  const userSettings=Var.Create_1(New_5("", "", null, "Monday", null, true));
   const username=Var.Create_1("Loading...");
   const newUsername=Var.Create_1("");
   const email=Var.Create_1("user@example.com");
   const password=Var.Create_1("");
-  const activeTab=Var.Create_1("Account");
+  const isProfilePublic=Var.Create_1(true);
+  const activeTab=Var.Create_1(page.$==1?"Account":page.$==2?"Health":"Account");
   const calendarStartDay=Var.Create_1("Monday");
   const avatarUrl=Var.Create_1("");
   const season=Const(getSeason(DatePortion(Date.now())));
@@ -353,13 +364,13 @@ export function SettingsPanel(){
     }
   })), null);
   Sink((day) => {
-    if(day!="Loading..."&&username.Get()!="Loading...")StartImmediate(Delay(() => Bind(UpdateUserSettings(New_5(day, Some(avatarUrl.Get()))), () => Zero())), null);
+    if(day!="Loading..."&&username.Get()!="Loading...")StartImmediate(Delay(() => Bind(UpdateUserSettings(New_5(username.Get(), email.Get(), userSettings.Get().PendingEmail, day, Some(avatarUrl.Get()), isProfilePublic.Get())), () => Zero())), null);
   }, calendarStartDay.View);
-  return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Settings", username, season), Doc.Element("div", [Attr.Create("class", "flex-1 p-10 overflow-y-auto w-full flex flex-col")], [Doc.Element("h1", [Attr.Create("class", "text-4xl font-extrabold text-gray-900 mb-10")], [Doc.TextNode("Settings")]), Doc.Element("div", [Attr.Create("class", "flex space-x-6 mb-10")], ofSeq(delay(() => map_1((tab) => Doc.Element("button", [Dynamic("class", Map((t) => t==tab?"px-8 py-3 rounded-2xl font-bold transition-all duration-300 transform active:scale-95 "+"neo-pressed bg-opacity-20 translate-y-px":"px-8 py-3 rounded-2xl font-bold transition-all duration-300 transform active:scale-95 "+"neo-flat text-gray-600 hover:text-gray-900", activeTab.View)), Dynamic("class", Map((at) => activeTab.Get()==tab?at:"", accentText)), Handler("click", () =>() => activeTab.Set(tab))], [Doc.TextNode(tab)]), ["Account", "Calendar", "Other"])))), Doc.Element("div", [Attr.Create("class", "flex-grow")], [Doc.EmbedView(Map((t) => t=="Account"?Doc.Element("div", [Attr.Create("class", "max-w-md w-full")], [Doc.Element("div", [Attr.Create("class", "neo-flat p-8 rounded-3xl mb-8")], [Doc.Element("div", [Attr.Create("class", "flex items-center space-x-6 mb-8 border-b border-gray-100 pb-8")], [Doc.Element("div", [Attr.Create("class", "w-20 h-20 rounded-full neo-flat flex items-center justify-center text-2xl font-bold overflow-hidden")], [Doc.EmbedView(Map((url) => IsNullOrWhiteSpace(url)?Doc.TextView(Map((u) => u.length>0?Substring(u, 0, 1).toUpperCase():"U", username.View)):Doc.Element("img", [Attr.Create("src", url), Attr.Create("class", "w-full h-full object-cover")], []), avatarUrl.View))]), Doc.Element("div", [], [Doc.Element("h3", [Attr.Create("class", "text-lg font-bold text-gray-800")], [Doc.TextNode("Profile Avatar")]), Doc.Element("p", [Attr.Create("class", "text-xs text-gray-500 mb-3")], [Doc.TextNode("Enter an image URL or Gravatar.")]), Button([Doc.TextNode("Change Avatar URL")], accentText, () => {
+  return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Settings", username, season, Const(false), () => { }), Doc.Element("div", [Attr.Create("class", "flex-1 p-10 overflow-y-auto w-full flex flex-col")], [Doc.Element("h1", [Attr.Create("class", "text-4xl font-extrabold text-gray-900 mb-10")], [Doc.TextNode("Settings")]), Doc.Element("div", [Attr.Create("class", "flex space-x-6 mb-10")], ofSeq(delay(() => map_1((tab) => Doc.Element("button", [Dynamic("class", Map((t) => t==tab?"px-8 py-3 rounded-2xl font-bold transition-all duration-300 transform active:scale-95 "+"neo-pressed bg-opacity-20 translate-y-px":"px-8 py-3 rounded-2xl font-bold transition-all duration-300 transform active:scale-95 "+"neo-flat text-gray-600 hover:text-gray-900", activeTab.View)), Dynamic("class", Map((at) => activeTab.Get()==tab?at:"", accentText)), Handler("click", () =>() => activeTab.Set(tab))], [Doc.TextNode(tab)]), ["Account", "Calendar", "Other"])))), Doc.Element("div", [Attr.Create("class", "flex-grow")], [Doc.EmbedView(Map((t) => t=="Account"?Doc.Element("div", [Attr.Create("class", "max-w-md w-full")], [Doc.Element("div", [Attr.Create("class", "neo-flat p-8 rounded-3xl mb-8")], [Doc.Element("div", [Attr.Create("class", "flex items-center space-x-6 mb-8 border-b border-gray-100 pb-8")], [Doc.Element("div", [Attr.Create("class", "w-20 h-20 rounded-full neo-flat flex items-center justify-center text-2xl font-bold overflow-hidden")], [Doc.EmbedView(Map((url) => IsNullOrWhiteSpace(url)?Doc.TextView(Map((u) => u.length>0?Substring(u, 0, 1).toUpperCase():"U", username.View)):Doc.Element("img", [Attr.Create("src", url), Attr.Create("class", "w-full h-full object-cover")], []), avatarUrl.View))]), Doc.Element("div", [], [Doc.Element("h3", [Attr.Create("class", "text-lg font-bold text-gray-800")], [Doc.TextNode("Profile Avatar")]), Doc.Element("p", [Attr.Create("class", "text-xs text-gray-500 mb-3")], [Doc.TextNode("Enter an image URL or Gravatar.")]), Button([Doc.TextNode("Change Avatar URL")], accentText, () => {
     const url=globalThis.prompt("Avatar Image URL:", avatarUrl.Get());
     if(!(url==null)){
       avatarUrl.Set(url);
-      StartImmediate(Delay(() => Bind(UpdateUserSettings(New_5(calendarStartDay.Get(), Some(url))), () => Zero())), null);
+      StartImmediate(Delay(() => Bind(UpdateUserSettings(New_5(username.Get(), email.Get(), userSettings.Get().PendingEmail, calendarStartDay.Get(), Some(avatarUrl.Get()), isProfilePublic.Get())), () => Zero())), null);
     }
   })])]), Doc.Element("div", [Attr.Create("class", "space-y-6")], [Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-3 pl-2")], [Doc.TextNode("Username")]), Doc.Input([Attr.Create("class", "neo-pressed rounded-xl w-full py-3 px-5 text-gray-800 focus:outline-none transition")], newUsername)]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-3 pl-2")], [Doc.TextNode("Email Address")]), Doc.EmailInput([Attr.Create("class", "neo-pressed rounded-xl w-full py-3 px-5 text-gray-800 focus:outline-none transition opacity-60")], email)]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-3 pl-2")], [Doc.TextNode("Password")]), Doc.PasswordBox([Attr.Create("class", "neo-pressed rounded-xl w-full py-3 px-5 text-gray-800 focus:outline-none transition placeholder:text-gray-400")], password)])]), Button([Doc.TextNode("Save Account Changes")], accentBg, () => {
     StartImmediate(Delay(() => {
@@ -383,27 +394,43 @@ export function SettingsPanel(){
       });
     }), null);
   }), Doc.Element("div", [Dynamic("class", Map((m) => m==""?"hidden":"mt-6 p-4 rounded-xl text-center text-sm "+(isSuccess.Get()?"bg-green-100 text-green-700":"bg-red-100 text-red-700"), message.View))], [Doc.TextView(message.View)])])]):t=="Calendar"?Doc.Element("div", [Attr.Create("class", "max-w-md w-full")], [Doc.Element("div", [Attr.Create("class", "neo-flat p-8 rounded-3xl")], [Doc.Element("h3", [Attr.Create("class", "text-lg font-bold text-gray-800 mb-6")], [Doc.TextNode("Calendar Preferences")]), Doc.Element("div", [Attr.Create("class", "mb-6")], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-3 pl-2")], [Doc.TextNode("First day of the week")]), Select(ofArray(["Monday", "Sunday", "Saturday"]), calendarStartDay, (x) => x, accentText, accentBg, false)]), Button([Doc.TextNode("Update Calendar")], accentBg, () => {
-    StartImmediate(Delay(() => Bind(UpdateUserSettings(New_5(calendarStartDay.Get(), Some(avatarUrl.Get()))), (a) => a.$==0?(showToast("Calendar settings saved!", Success),Zero()):a.$==3?(showToast(a.$0, Error),Zero()):Zero())), null);
+    StartImmediate(Delay(() => Bind(UpdateUserSettings(New_5(username.Get(), email.Get(), userSettings.Get().PendingEmail, calendarStartDay.Get(), Some(avatarUrl.Get()), isProfilePublic.Get())), (a) => a.$==0?(showToast("Calendar settings saved!", Success),Zero()):a.$==3?(showToast(a.$0, Error),Zero()):Zero())), null);
   })])]):t=="Other"?Doc.Element("div", [Attr.Create("class", "max-w-md w-full")], [Doc.Element("div", [Attr.Create("class", "neo-flat p-10 rounded-3xl flex flex-col items-center justify-center min-h-[300px] border-2 border-dashed border-gray-200 bg-opacity-30")], [Doc.Element("span", [Attr.Create("class", "text-4xl mb-4 grayscale opacity-40")], [Doc.TextNode("\u2699\ufe0f")]), Doc.Element("p", [Attr.Create("class", "text-gray-500 italic font-medium")], [Doc.TextNode("Additional settings will appear here soon.")])])]):Doc.Empty, activeTab.View))])])]);
 }
 export function Dashboard(){
   const username=Var.Create_1("Loading...");
   const season=Const(getSeason(DatePortion(Date.now())));
   StartImmediate(Delay(() => Bind(CheckAuthState(), (a) => a.$==1?(username.Set(a.$0),Zero()):(globalThis.location.href="/",Zero()))), null);
-  return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Dashboard", username, season), Doc.Element("div", [Attr.Create("class", "flex-1 p-10 overflow-y-auto w-full")], [Doc.Element("h1", [Attr.Create("class", "text-4xl font-extrabold text-gray-900 mb-6")], [Doc.TextNode("Welcome Back!")]), Doc.Element("p", [Attr.Create("class", "text-gray-800")], [Doc.TextNode("This is your newly generated workspace dashboard.")])])]);
+  return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Dashboard", username, season, Const(false), () => { }), Doc.Element("div", [Attr.Create("class", "flex-1 p-10 overflow-y-auto w-full")], [Doc.Element("h1", [Attr.Create("class", "text-4xl font-extrabold text-gray-900 mb-6")], [Doc.TextNode("Welcome Back!")]), Doc.Element("p", [Attr.Create("class", "text-gray-800")], [Doc.TextNode("This is your newly generated workspace dashboard.")])])]);
 }
-export function Sidebar(active, username, season){
-  const firstChar=Map((u) => u.length>0?Substring(u, 0, 1).toUpperCase():"U", username.View);
+export function Sidebar(active, username, season, isCollapsed, onToggle){
   const accentText=Map((s) => getSeasonTheme(s, "text", "600"), season);
   const accentHover=Map((s) => getSeasonTheme(s, "hover:text", "500"), season);
   const accentBg=Map((s) => getSeasonTheme(s, "bg", "100"), season);
-  return Doc.Element("div", [Attr.Create("class", "w-64 neo-flat flex flex-col justify-between m-6 rounded-3xl p-6")], [Doc.Element("div", [], [Doc.Element("ul", [Attr.Create("class", "space-y-4 mt-8 w-full")], ofSeq(delay(() => collect((m) => {
+  const items=ofArray([["Dashboard", "/dashboard", "<path d=\"M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z\"></path>"], ["Planner", "/planner", "<path d=\"M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4\"></path>"], ["Calendar", "/calendar", "<rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\"></rect><line x1=\"16\" y1=\"2\" x2=\"16\" y2=\"6\"></line><line x1=\"8\" y1=\"2\" x2=\"8\" y2=\"6\"></line><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"></line>"], ["Products", "/products", "<path d=\"M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z\"></path><line x1=\"3\" y1=\"6\" x2=\"21\" y2=\"6\"></line><path d=\"M16 10a4 4 0 01-8 0\"></path>"], ["Recipes", "/recipes", "<path d=\"M18 20V6a2 2 0 00-2-2H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2z\"></path><path d=\"M18 20l4-4\"></path><path d=\"M18 6l4 4\"></path>"], ["Records", "/records", "<polyline points=\"22 12 18 12 15 21 9 3 6 12 2 12\"></polyline>"]]);
+  return Doc.Element("div", [Dynamic("class", Map((collapsed) => collapsed?"neo-flat flex flex-col justify-between m-6 w-20 p-4 rounded-full":"neo-flat flex flex-col justify-between m-6 w-64 p-5 rounded-[2rem]", isCollapsed))], [Doc.Element("div", [Attr.Create("class", "w-full")], [Doc.Element("ul", [Dynamic("class", Map((collapsed) => collapsed?"flex flex-col space-y-4 mt-8 w-full items-center":"flex flex-col space-y-4 mt-8 w-full items-stretch", isCollapsed))], ofSeq(delay(() => collect((m) => {
     const url=m[1];
     const name=m[0];
-    return[Doc.Element("li", [Dynamic("class", Map2((_1) => active==name?"p-4 rounded-xl cursor-pointer text-center neo-nav-active font-bold "+getSeasonTheme(_1, "text", "600"):"p-4 rounded-xl cursor-pointer text-center "+(((_2) =>(_3) => _2("text-gray-800 neo-nav-item "+toSafe(_3)))((x) => x))(getSeasonTheme(_1, "hover:text", "500")), season, accentHover)), Handler("click", () =>() => {
+    return[Doc.Element("li", [Dynamic("class", Map3((_1, _2, _3) =>"cursor-pointer flex items-center "+(active==name?"neo-nav-active "+getSeasonTheme(_1, "text", "600"):(((_4) =>(_5) => _4("text-gray-800 neo-nav-item "+toSafe(_5)))((x) => x))(getSeasonTheme(_1, "hover:text", "500")))+(_3?"w-12 h-12 rounded-full aspect-square justify-center flex-shrink-0":"w-full p-4 rounded-2xl space-x-4"), season, accentHover, isCollapsed)), Handler("click", () =>() => {
       globalThis.location.href=url;
-    })], [Doc.TextNode(name)])];
-  }, ofArray([["Dashboard", "/dashboard"], ["Planner", "/planner"], ["Calendar", "/calendar"], ["Products", "/products"], ["Recipes", "/recipes"], ["Records", "/records"]])))))]), Doc.Element("div", [Attr.Create("class", "flex items-center justify-between mt-auto w-full")], [Doc.Element("div", [Attr.Create("class", "flex items-center space-x-3 overflow-hidden")], [Doc.Element("div", [Dynamic("class", Map((bg) =>(((_1) =>(_2) => _1("w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center "+toSafe(_2)+" font-bold"))((x) => x))(bg), accentBg)), Dynamic("class", Map((textCol) => textCol, accentText))], [Doc.TextView(firstChar)]), Doc.Element("span", [Attr.Create("class", "text-sm font-bold text-gray-800 truncate max-w-[90px]")], [Doc.TextView(username.View)])]), Doc.Element("a", [Attr.Create("href", "/settings"), Dynamic("class", Map2((_1, _2) => _2=="Settings"?"w-10 h-10 flex items-center justify-center rounded-full transition cursor-pointer flex-shrink-0 neo-nav-active "+getSeasonTheme(_1, "text", "600"):"w-10 h-10 flex items-center justify-center rounded-full transition cursor-pointer flex-shrink-0 text-gray-700 neo-nav-item", season, Const(active)))], [Doc.Verbatim("<svg class=\"w-5 h-5 transition-transform\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z\"></path><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15 12a3 3 0 11-6 0 3 3 0 016 0z\"></path></svg>")])])]);
+    })], [Doc.Verbatim((((_1) =>(_2) => _1("<svg class=\"w-6 h-6 flex-shrink-0\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" viewBox=\"0 0 24 24\">"+toSafe(_2)+"</svg>"))((x) => x))(m[2])), Doc.EmbedView(Map((collapsed) =>!collapsed?Doc.Element("span", [Attr.Create("class", "ml-4 font-semibold text-sm")], [Doc.TextNode(name)]):Doc.Empty, isCollapsed))])];
+  }, items))))]), Doc.Element("div", [Dynamic("class", Map((collapsed) => collapsed?"flex mt-auto w-full flex-col items-center space-y-4":"flex mt-auto w-full items-center justify-between", isCollapsed))], [Doc.Element("div", [Attr.Create("class", "flex items-center space-x-3 overflow-hidden")], [Doc.Element("div", [Dynamic("class", Map((bg) =>(((_1) =>(_2) => _1("w-12 h-12 flex-shrink-0 rounded-full flex items-center justify-center "+toSafe(_2)+" font-bold overflow-hidden"))((x) => x))(bg), accentBg)), Dynamic("class", Map((textCol) => textCol, accentText))], ofSeq(delay(() => {
+    const v=Var.Create_1(Doc.Empty);
+    StartImmediate(Delay(() => Bind(GetUserSettings(), (a) => Bind(CheckAuthState(), (a_1) => {
+      let initial;
+      let _1;
+      if(a_1.$==1){
+        const u=a_1.$0;
+        initial=u.length>0?Substring(u, 0, 1).toUpperCase():"U";
+      }
+      else initial="U";
+      const m=a.AvatarUrl;
+      let _2=m!=null&&m.$==1&&(!IsNullOrWhiteSpace(m.$0)&&(_1=m.$0,true))?Doc.Element("img", [Attr.Create("src", _1), Attr.Create("class", "w-full h-full object-cover")], []):Doc.TextNode(initial);
+      v.Set(_2);
+      return Zero();
+    }))), null);
+    return[Doc.EmbedView(v.View)];
+  }))), Doc.EmbedView(Map((collapsed) =>!collapsed?Doc.Element("div", [Attr.Create("class", "flex flex-col overflow-hidden")], [Doc.Element("span", [Attr.Create("class", "text-sm font-bold text-gray-800 truncate max-w-[120px]")], [Doc.TextView(username.View)])]):Doc.Empty, isCollapsed))]), Doc.Element("div", [Dynamic("class", Map((collapsed) => collapsed?"flex flex-col space-y-4 items-center":"flex items-center space-x-2", isCollapsed))], [Doc.Element("a", [Attr.Create("href", "/settings"), Dynamic("class", Map2((_1, _2) => _2=="Settings"?"w-12 h-12 flex items-center justify-center rounded-full cursor-pointer flex-shrink-0 neo-nav-active "+getSeasonTheme(_1, "text", "600"):"w-12 h-12 flex items-center justify-center rounded-full cursor-pointer flex-shrink-0 text-gray-700 neo-nav-item", season, Const(active)))], [Doc.Verbatim("<svg class=\"w-5 h-5 flex-shrink-0\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" stroke-width=\"2\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z\"></path><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15 12a3 3 0 11-6 0 3 3 0 016 0z\"></path></svg>")]), Doc.EmbedView(Map((collapsed) => collapsed?Doc.Element("button", [Attr.Create("class", "w-12 h-12 flex items-center justify-center rounded-full text-gray-700 neo-nav-item cursor-pointer active:scale-95"), Handler("click", () =>() => onToggle())], [Doc.Verbatim("<svg class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" stroke-width=\"2\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M13 5l7 7-7 7M5 5l7 7-7 7\"></path></svg>")]):Doc.Element("button", [Attr.Create("class", "w-12 h-12 flex items-center justify-center rounded-full text-gray-700 neo-nav-item cursor-pointer active:scale-95"), Handler("click", () =>() => onToggle())], [Doc.Verbatim("<svg class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" stroke-width=\"2\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M11 19l-7-7 7-7M19 19l-7-7 7-7\"></path></svg>")]), isCollapsed))])])]);
 }
 export function NavBarAuthWidget(){
   const state=Var.Create_1(Error_1("Loading..."));
@@ -412,18 +439,8 @@ export function NavBarAuthWidget(){
     return Zero();
   })), null);
   return Doc.Element("div", [], [Doc.EmbedView(Map((s) => {
-    if(s.$==1){
-      const username=s.$0;
-      const isVerified=s.$1;
-      return Doc.Element("div", [Attr.Create("class", "flex items-center space-x-4")], [!isVerified?Doc.Element("span", [Attr.Create("class", "relative flex h-4 w-4 transform -translate-y-1")], [Doc.Element("span", [Attr.Create("class", "animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75")], []), Doc.Element("span", [Attr.Create("class", "relative inline-flex rounded-full h-4 w-4 bg-red-500")], []), Doc.Element("span", [Attr.Create("title", "Please verify your email!"), Attr.Create("class", "absolute w-4 h-4 cursor-pointer")], [])]):Doc.Empty, Doc.Element("span", [Attr.Create("class", "text-gray-900 font-medium")], [Doc.TextNode("Hi, "+username)]), Doc.Element("button", [Attr.Create("class", "neo-button bg-transparent text-gray-800 hover:text-red-500 font-medium py-2 px-6 rounded-full"), Handler("click", () =>() => StartImmediate(Delay(() => Bind(Logout(), () => {
-        globalThis.location.href="/";
-        return Zero();
-      })), null))], [Doc.TextNode("Logout")])]);
-    }
-    else {
-      const accentBg=Map((s_1) => getSeasonTheme(s_1, "bg", "100"), Const(getSeason(DatePortion(Date.now()))));
-      return Doc.Element("a", [Attr.Create("href", "/auth"), Dynamic("class", Map((bg) =>(((_1) =>(_2) => _1("neo-nav-item font-bold py-3 px-8 rounded-full "+toSafe(_2)+" transition"))((x) => x))(bg), accentBg))], [Doc.TextNode("Login")]);
-    }
+    const accentBg=Map((s_1) => getSeasonTheme(s_1, "bg", "100"), Const(getSeason(DatePortion(Date.now()))));
+    return s.$==1?Doc.Element("div", [Attr.Create("class", "flex items-center space-x-4")], [Doc.Element("a", [Attr.Create("href", "/dashboard"), Dynamic("class", Map((bg) =>(((_1) =>(_2) => _1("neo-nav-item font-bold py-3 px-8 rounded-full "+toSafe(_2)))((x) => x))(bg), accentBg))], [Doc.TextNode("Dashboard")])]):Doc.Element("a", [Attr.Create("href", "/auth"), Dynamic("class", Map((bg) =>(((_1) =>(_2) => _1("neo-nav-item font-bold py-3 px-8 rounded-full "+toSafe(_2)))((x) => x))(bg), accentBg))], [Doc.TextNode("Login")]);
   }, state.View))]);
 }
 export function ChangePassword(){
@@ -481,7 +498,7 @@ export function AuthCard(){
   const isLogin=Var.Create_1(true);
   return GlassCard(ofSeq(delay(() => {
     const accent=Map((s) => getSeasonTheme(s, "text", "600"), Const(getSeason(DatePortion(Date.now()))));
-    return append_1([Doc.Element("div", [Attr.Create("class", "flex border-b border-gray-200 mb-8")], [Doc.Element("button", [Dynamic("class", Map((l) => l?"w-1/2 py-4 text-center font-bold transition-all outline-none border-b-2":"w-1/2 py-4 text-center font-bold transition-all outline-none text-gray-500", isLogin.View)), Dynamic("class", Map2((_1, _2) => _1?"border-b-2 "+_2:"", isLogin.View, accent)), Handler("click", () =>() => isLogin.Set(true))], [Doc.TextNode("Login")]), Doc.Element("button", [Dynamic("class", Map((l) =>!l?"w-1/2 py-4 text-center font-bold transition-all outline-none border-b-2":"w-1/2 py-4 text-center font-bold transition-all outline-none text-gray-500", isLogin.View)), Dynamic("class", Map2((_1, _2) =>!_1?"border-b-2 "+_2:"", isLogin.View, accent)), Handler("click", () =>() => isLogin.Set(false))], [Doc.TextNode("Register")])])], delay(() =>[Doc.Element("div", [], [Doc.EmbedView(Map((login) => login?LoginForm():RegistrationForm(), isLogin.View))])]));
+    return append_1([Doc.Element("div", [Attr.Create("class", "flex border-b border-gray-200 mb-8")], [Doc.Element("button", [Dynamic("class", Map((l) => l?"w-1/2 py-4 text-center font-bold outline-none border-b-2":"w-1/2 py-4 text-center font-bold outline-none text-gray-500", isLogin.View)), Dynamic("class", Map2((_1, _2) => _1?"border-b-2 "+_2:"", isLogin.View, accent)), Handler("click", () =>() => isLogin.Set(true))], [Doc.TextNode("Login")]), Doc.Element("button", [Dynamic("class", Map((l) =>!l?"w-1/2 py-4 text-center font-bold transition-all outline-none border-b-2":"w-1/2 py-4 text-center font-bold transition-all outline-none text-gray-500", isLogin.View)), Dynamic("class", Map2((_1, _2) =>!_1?"border-b-2 "+_2:"", isLogin.View, accent)), Handler("click", () =>() => isLogin.Set(false))], [Doc.TextNode("Register")])])], delay(() =>[Doc.Element("div", [], [Doc.EmbedView(Map((login) => login?LoginForm():RegistrationForm(), isLogin.View))])]));
   })));
 }
 export function RegistrationForm(){
@@ -605,12 +622,12 @@ export function renderDate(d, isMain, onClick){
         return[Handler("click", () =>() => f(d))];
       }
     }));
-  })))), ofSeq(delay(() => append_1([Doc.Element("span", [Attr.Create("class", "text-xs font-bold text-gray-600 uppercase")], [Doc.TextNode(DateFormatter(d, "ddd"))])], delay(() => append_1([Doc.Element("div", [Attr.Create("class", "text-[10px] mb-1")], [Doc.TextNode(seasonIcon)])], delay(() => append_1([Doc.Element("div", [Attr.Create("class", "flex flex-col items-center mb-1")], [Doc.Element("span", [Attr.Create("class", "text-2xl")], [Doc.TextNode(moonIcon)]), Doc.Element("span", [Attr.Create("class", "text-sm font-black text-gray-800")], [Doc.TextNode(moonDisplay)])])], delay(() => {
+  })))), ofSeq(delay(() => append_1([Doc.Element("span", [Attr.Create("class", "text-xs font-bold text-gray-600 uppercase")], [Doc.TextNode(DateFormatter(d, "ddd"))])], delay(() => append_1([Doc.Element("div", [Attr.Create("class", "text-[10px] mb-1")], [Doc.TextNode(seasonIcon)])], delay(() => append_1([Doc.Element("div", [Attr.Create("class", "flex flex-col items-center mb-1 w-full")], [Doc.Element("span", [Attr.Create("class", "text-2xl")], [Doc.TextNode(moonIcon)]), Doc.Element("span", [Attr.Create("class", "text-sm font-black text-gray-800 text-center px-2")], [Doc.TextNode(moonDisplay)])])], delay(() => {
     let _1;
     if(seasonal!=null&&seasonal.$==1){
       const label=seasonal.$0[1];
       const icon=seasonal.$0[0];
-      _1=[Doc.Element("div", [Attr.Create("class", "flex flex-col items-center mb-1")], [Doc.Element("span", [Attr.Create("class", "text-base")], [Doc.TextNode(icon)]), Doc.Element("span", [Attr.Create("class", "text-[8px] font-black text-gray-700 uppercase text-center bg-white/20 rounded px-1")], [Doc.TextNode(label)])])];
+      _1=[Doc.Element("div", [Attr.Create("class", "flex flex-col items-center mb-1 w-full")], [Doc.Element("span", [Attr.Create("class", "text-base")], [Doc.TextNode(icon)]), Doc.Element("span", [Attr.Create("class", "text-[8px] font-black text-gray-700 uppercase text-center bg-white/20 rounded px-1 max-w-full truncate")], [Doc.TextNode(label)])])];
     }
     else _1=[];
     return append_1(_1, delay(() => {

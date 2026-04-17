@@ -1,9 +1,42 @@
 import { Bind, Return } from "../WebSharper.StdLib/WebSharper.Concurrency.js"
 import AjaxRemotingProvider from "../WebSharper.StdLib/WebSharper.Remoting.AjaxRemotingProvider.js"
-import { EncodeJson_GlobalSettings, DecodeJson_AuthResult, DecodeJson_GlobalSettings, EncodeJson_MealPlanItem, DecodeJson_MealPlanItem, EncodeJson_DailyRecord, DecodeJson_DailyRecord, EncodeJson_CalendarEvent, DecodeJson_CalendarEvent } from "./$Generated.js"
+import { DecodeJson_AuthResult, EncodeJson_GlobalSettings, DecodeJson_FSharpOption_1, DecodeJson_GlobalSettings, EncodeJson_MealPlanItem, DecodeJson_MealPlanItem, EncodeJson_DailyRecord, DecodeJson_DailyRecord, EncodeJson_CalendarEvent, DecodeJson_CalendarEvent } from "./$Generated.js"
 import { EncodeDateTime, DecodeArray } from "../WebSharper.Web/WebSharper.ClientSideJson.Provider.js"
+export function SaveHealthSettings(h){
+  return Bind((new AjaxRemotingProvider()).Async("Server/SaveHealthSettings", [h]), (o) => Return((DecodeJson_AuthResult())(o)));
+}
+export function GetHealthSettings(){
+  return Bind((new AjaxRemotingProvider()).Async("Server/GetHealthSettings", []), (o) => Return(o));
+}
+export function ChangePassword(newPassword){
+  return Bind((new AjaxRemotingProvider()).Async("Server/ChangePassword", [newPassword]), (o) => Return((DecodeJson_AuthResult())(o)));
+}
+export function SetProfileVisibility(isPublic){
+  return Bind((new AjaxRemotingProvider()).Async("Server/SetProfileVisibility", [isPublic]), (o) => Return((DecodeJson_AuthResult())(o)));
+}
 export function UpdateUserSettings(s){
   return Bind((new AjaxRemotingProvider()).Async("Server/UpdateUserSettings", [(EncodeJson_GlobalSettings())(s)]), (o) => Return((DecodeJson_AuthResult())(o)));
+}
+export function UploadAvatar(base64Data){
+  return Bind((new AjaxRemotingProvider()).Async("Server/UploadAvatar", [base64Data]), (o) => Return((DecodeJson_AuthResult())(o)));
+}
+export function GetPublicProfile(username){
+  return Bind((new AjaxRemotingProvider()).Async("Server/GetPublicProfile", [username]), (o) => Return((DecodeJson_FSharpOption_1())(o)));
+}
+export function VerifyEmailChange(token){
+  return Bind((new AjaxRemotingProvider()).Async("Server/VerifyEmailChange", [token]), (o) => Return((DecodeJson_AuthResult())(o)));
+}
+export function CancelEmailChange(){
+  return Bind((new AjaxRemotingProvider()).Async("Server/CancelEmailChange", []), (o) => Return((DecodeJson_AuthResult())(o)));
+}
+export function RequestEmailChange(newEmail){
+  return Bind((new AjaxRemotingProvider()).Async("Server/RequestEmailChange", [newEmail]), (o) => Return((DecodeJson_AuthResult())(o)));
+}
+export function SaveUsername(newUsername){
+  return Bind((new AjaxRemotingProvider()).Async("Server/SaveUsername", [newUsername]), (o) => Return((DecodeJson_AuthResult())(o)));
+}
+export function CheckUsernameAvailability(username){
+  return Bind((new AjaxRemotingProvider()).Async("Server/CheckUsernameAvailability", [username]), (o) => Return(o));
 }
 export function GetUserSettings(){
   return Bind((new AjaxRemotingProvider()).Async("Server/GetUserSettings", []), (o) => Return((DecodeJson_GlobalSettings())(o)));

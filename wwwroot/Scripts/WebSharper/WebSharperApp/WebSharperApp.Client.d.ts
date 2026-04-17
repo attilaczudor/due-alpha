@@ -1,18 +1,21 @@
 import Doc from "../WebSharper.UI/WebSharper.UI.Doc"
+import { SettingsPage } from "./WebSharperApp.SettingsPage"
 import Var from "../WebSharper.UI/WebSharper.UI.Var`1"
 import { View_T } from "../WebSharper.UI/WebSharper.UI.View`1"
 import IEnumerable from "../WebSharper.StdLib/System.Collections.Generic.IEnumerable`1"
 import { FSharpOption } from "../WebSharper.StdLib/Microsoft.FSharp.Core.FSharpOption`1"
 import { ToastType } from "./WebSharperApp.Client.ToastType"
 import ToastMsg from "./WebSharperApp.Client.ToastMsg"
+export function VerifyEmailChange(token:string):Doc
+export function ProfilePage(username:string):Doc
 export function ProductsPage():Doc
 export function RecordsPage():Doc
 export function RecipesPage():Doc
 export function CalendarPage():Doc
 export function PlannerPage():Doc
-export function SettingsPanel():Doc
+export function SettingsPanel(page:SettingsPage):Doc
 export function Dashboard():Doc
-export function Sidebar(active:string, username:Var<string>, season:View_T<string>):Doc
+export function Sidebar(active:string, username:Var<string>, season:View_T<string>, isCollapsed:View_T<boolean>, onToggle:(() => void)):Doc
 export function NavBarAuthWidget():Doc
 export function ChangePassword():Doc
 export function MagicLogin(token:string):Doc
