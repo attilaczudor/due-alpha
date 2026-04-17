@@ -6,25 +6,10 @@ open WebSharper.UI
 open WebSharper.UI.Server
 open WebSharper.UI.Templating
 open WebSharper.UI.Html
-/// <summary>Endpoint mapping natively explicitly routing specific URL segments implicitly deep into localized F# functions.</summary>
-type EndPoint =
-    | [<EndPoint "/">] Home
-    | [<EndPoint "/auth">] Auth
-    | [<EndPoint "/forgot-password">] ForgotPassword
-    | [<EndPoint "/verify-email">] VerifyEmail of token: string
-    | [<EndPoint "/magic-login">] MagicLogin of token: string
-    | [<EndPoint "/change-password">] ChangePassword
-    | [<EndPoint "/dashboard">] Dashboard
-    | [<EndPoint "/planner">] Planner
-    | [<EndPoint "/calendar">] Calendar
-    | [<EndPoint "/products">] Products
-    | [<EndPoint "/recipes">] Recipes
-    | [<EndPoint "/records">] Records
-    | [<EndPoint "/settings">] Settings
 
 module Components =
     
-    let NavBar () =
+    let NavBar (activePage: string) =
         nav [attr.``class`` "neo-flat rounded-full m-6 px-8 py-4 sticky top-6 z-50"] [
             div [attr.``class`` "mx-auto grid grid-cols-3 items-center"] [
                 // Left: Logo
@@ -35,7 +20,11 @@ module Components =
                 // Center: Navigation Menu
                 div [attr.``class`` "flex justify-center"] [
                     ul [attr.``class`` "flex space-x-8"] [
-                        li [] [a [attr.href "/"; attr.``class`` "text-gray-600 hover:text-blue-500 font-medium transition duration-300"] [text "Home"]]
+                        let homeClass = 
+                            "font-bold py-3 px-8 rounded-2xl transition-all duration-300 transform active:scale-95 " +
+                            if activePage = "Home" then "neo-pressed text-emerald-600 translate-y-px"
+                            else "neo-flat text-gray-600 hover:text-gray-900 hover:neo-level-2"
+                        li [] [a [attr.href "/"; attr.``class`` homeClass] [text "Home"]]
                     ]
                 ]
                 
@@ -62,7 +51,7 @@ module Site =
         Templating.MainTemplate()
             .Title(title)
             .Body([
-                Components.NavBar()
+                Components.NavBar(title)
                 
                 div [attr.``class`` "container mx-auto flex-grow px-4 py-12 flex items-center justify-center"] [
                     div [attr.``class`` "w-full"] [
@@ -88,7 +77,8 @@ module Site =
 
     [<Website>]
     let Main =
-        Application.MultiPage (fun ctx endpoint ->
+        Application.MultiPage (fun (ctx: Context<EndPoint>) (endpoint: EndPoint) ->
+            printfn "Matched Endpoint: %A" endpoint
             match endpoint with
             | EndPoint.Home -> GenericPage ctx "Home" (WebSharper.UI.ClientServer.client (Client.HomeHero()))
             | EndPoint.Auth -> GenericPage ctx "Authentication" (WebSharper.UI.ClientServer.client (Client.AuthCard()))
@@ -103,5 +93,7 @@ module Site =
             | EndPoint.Recipes -> DashboardPage ctx "Recipes" (WebSharper.UI.ClientServer.client (Client.RecipesPage()))
             | EndPoint.Records -> DashboardPage ctx "Records" (WebSharper.UI.ClientServer.client (Client.RecordsPage()))
             | EndPoint.Settings -> DashboardPage ctx "Settings" (WebSharper.UI.ClientServer.client (Client.SettingsPanel()))
+            | EndPoint.Profile username -> GenericPage ctx (sprintf "@%s" username) (WebSharper.UI.ClientServer.client (Client.ProfilePage(username)))
+            | EndPoint.VerifyEmailChange token -> GenericPage ctx "Verify Email Change" (WebSharper.UI.ClientServer.client (Client.VerifyEmailChange(token)))
         )
 

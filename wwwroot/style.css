@@ -6,7 +6,19 @@ body {
 .neo-flat {
   background-color: #e0e5ec;
   box-shadow: 10px 10px 20px rgb(163,177,198,0.7), -10px -10px 20px rgba(255,255,255, 0.6);
-  transition: all 0.3s ease;
+}
+
+.neo-flat:hover {
+  transition: box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+/* Global Transition Override for Settings */
+.no-transitions, .no-transitions * {
+  transition: none !important;
+  animation: none !important;
+}
+.no-transitions *:hover, .no-transitions *:active {
+    transform: none !important;
 }
 .neo-pressed {
   background-color: #e0e5ec;
@@ -15,10 +27,13 @@ body {
 .neo-button {
   background-color: #e0e5ec;
   box-shadow: 6px 6px 10px rgb(163,177,198,0.6), -6px -6px 10px rgba(255,255,255, 0.5);
-  transition: all 0.2s ease-in-out;
+}
+.neo-button:hover {
+  transition: box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out;
 }
 .neo-button:active {
   box-shadow: inset 4px 4px 8px 0 rgba(163, 177, 198, 0.7), inset -6px -6px 10px 0 rgba(255, 255, 255, 0.8);
+  transition: box-shadow 0.1s ease;
 }
 .neo-nav-item {
   background-color: transparent;
@@ -28,22 +43,68 @@ body {
   background-color: #e0e5ec;
   box-shadow: 10px 10px 20px rgb(163,177,198,0.7), -10px -10px 20px rgba(255, 255, 255, 0.6);
   transform: translateY(-2px);
+  transition: all 0.2s ease-in-out;
 }
-.neo-nav-active {
-  background-color: #e0e5ec;
-  box-shadow: inset 6px 6px 10px 0 rgba(163, 177, 198, 0.7), inset -6px -6px 10px 0 rgba(255, 255, 255, 0.8);
+.neo-nav-item:active {
+  transition: all 0.1s ease;
+}
+.neo-interactive {
+  background-color: transparent;
+}
+
+.neo-level-1, .neo-interactive {
+  box-shadow: 4px 4px 8px 0 rgba(163, 177, 198, 0.5), -4px -4px 8px 0 rgba(255, 255, 255, 0.7);
+}
+
+.neo-level-2 {
+  box-shadow: 8px 8px 16px 0 rgba(163, 177, 198, 0.6), -8px -8px 16px 0 rgba(255, 255, 255, 0.8);
+}
+
+.hover\:neo-level-2:hover {
+  box-shadow: 8px 8px 16px 0 rgba(163, 177, 198, 0.6), -8px -8px 16px 0 rgba(255, 255, 255, 0.8);
+}
+
+.neo-level-0 {
+  box-shadow: none;
+}
+
+.neo-level--1 {
+  box-shadow: inset 4px 4px 8px 0 rgba(163, 177, 198, 0.6), inset -4px -4px 8px 0 rgba(255, 255, 255, 0.7) !important;
+  cursor: default;
+  pointer-events: none;
+}
+
+.neo-interactive:hover:not(.neo-level--1) {
+  box-shadow: 8px 8px 16px 0 rgba(163, 177, 198, 0.6), -8px -8px 16px 0 rgba(255, 255, 255, 0.8);
+  transform: translateY(-1px);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.neo-interactive:active:not(.neo-level--1) {
+  box-shadow: none !important;
+  transform: translateY(0);
+  transition: all 0.1s ease;
+}
+
+.neo-interactive:hover:not(.neo-level-1) {
+  box-shadow: 8px 8px 16px 0 rgba(163, 177, 198, 0.6), -8px -8px 16px 0 rgba(255, 255, 255, 0.8);
+  transform: translateY(-1px);
+}
+.neo-interactive:active {
+  box-shadow: inset 4px 4px 8px 0 rgba(163, 177, 198, 0.6), inset -4px -4px 8px 0 rgba(255, 255, 255, 0.7);
 }
 .neo-button-blue {
   background-color: #3b82f6; /* Tailwind Blue 500 */
   box-shadow: 6px 6px 10px rgb(163,177,198,0.6), -6px -6px 10px rgba(255,255,255, 0.5);
-  transition: all 0.2s ease-in-out;
   color: white;
 }
 .neo-button-blue:hover {
   background-color: #2563eb;
+  transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 .neo-button-blue:active {
   box-shadow: inset 4px 4px 8px 0 rgba(30, 58, 138, 0.5), inset -4px -4px 8px 0 rgba(96, 165, 250, 0.5);
+  transition: box-shadow 0.1s ease;
 }
 
 .toast-container {

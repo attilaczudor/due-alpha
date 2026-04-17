@@ -10,13 +10,24 @@ open WebSharper.JavaScript
 module Client =
     
     [<JavaScript>]
-    type ToastType = Success | Error
+    type ToastType = Success | Error | Warning | Info
 
     [<JavaScript>]
     type ToastMsg = { Content: string; Type: ToastType }
 
     [<JavaScript>]
     let private currentToast = Var.Create (None: ToastMsg option)
+
+    [<JavaScript>]
+    let isMenuCollapsed = Var.Create false
+
+    [<JavaScript>]
+    let disableTransitionsOnLoad () =
+        async {
+            JS.Document.Body.ClassList.Add("no-transitions")
+            do! Async.Sleep 300
+            JS.Document.Body.ClassList.Remove("no-transitions")
+        } |> Async.StartImmediate
 
     [<JavaScript>]
     let showToast content t =
@@ -38,18 +49,36 @@ module Client =
                     match t.Type with
                     | Success -> "text-emerald-600"
                     | Error -> "text-red-500"
+                    | Warning -> "text-yellow-500"
+                    | Info -> "text-blue-500"
                 
                 let icon = 
                     match t.Type with
                     | Success -> Doc.Verbatim """<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>"""
                     | Error -> Doc.Verbatim """<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>"""
+                    | Warning -> Doc.Verbatim """<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>"""
+                    | Info -> Doc.Verbatim """<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>"""
+
+                let borderClass = 
+                    match t.Type with
+                    | Success -> "border-emerald-500"
+                    | Error -> "border-red-500"
+                    | Warning -> "border-yellow-500"
+                    | Info -> "border-blue-500"
+
+                let titleText = 
+                    match t.Type with
+                    | Success -> "Success"
+                    | Error -> "Error"
+                    | Warning -> "Warning"
+                    | Info -> "Info"
 
                 div [attr.``class`` "toast-container"] [
-                    div [attr.``class`` ("toast-item neo-flat p-5 rounded-3xl animate-toast flex items-center space-x-4 border-l-4 " + (if t.Type = Success then "border-emerald-500" else "border-red-500"))] [
+                    div [attr.``class`` ("toast-item neo-flat p-5 rounded-3xl animate-toast flex items-center space-x-4 border-l-4 " + borderClass)] [
                         div [attr.``class`` ("w-10 h-10 rounded-full neo-pressed flex items-center justify-center " + colorClass)] [icon]
                         div [attr.``class`` "flex-1"] [
                             h4 [attr.``class`` "text-xs font-black uppercase tracking-widest text-gray-500 mb-1"] [
-                                text (if t.Type = Success then "Success" else "System Message")
+                                text titleText
                             ]
                             p [attr.``class`` "text-sm font-bold text-gray-800"] [text t.Content]
                         ]
@@ -129,33 +158,58 @@ module Client =
     module Neo =
         let Button (content: seq<Doc>) (accent: View<string>) (onClick: unit -> unit) =
             button [
-                attr.classDyn (accent |> View.Map (fun a -> sprintf "neo-nav-item px-6 py-3 rounded-xl %s font-bold transition active:scale-95 transform" a))
+                attr.classDyn (accent |> View.Map (fun a -> 
+                    // Default: elevation 1, Hover: elevation 2, Pressed: elevation 1
+                    sprintf "bg-transparent neo-level-1 hover:neo-level-2 active:neo-level-1 px-6 py-3 rounded-xl %s font-bold transition-all duration-300 active:scale-95 transform" a))
+                on.click (fun _ _ -> onClick())
+            ] content
+
+        let FullWidthButton (content: seq<Doc>) (accent: View<string>) (onClick: unit -> unit) =
+            button [
+                attr.classDyn (accent |> View.Map (fun a -> 
+                    sprintf "bg-transparent w-full neo-level-1 hover:neo-level-2 active:neo-level-1 px-6 py-3 rounded-xl %s font-bold transition-all duration-300 active:scale-95 transform" a))
                 on.click (fun _ _ -> onClick())
             ] content
 
         let IconButton (icon: Doc) (accentHover: View<string>) (onClick: unit -> unit) =
             button [
-                attr.classDyn (accentHover |> View.Map (fun ah -> sprintf "w-12 h-12 flex items-center justify-center rounded-full neo-nav-item text-gray-700 hover:%s transition active:scale-95 transform" ah))
+                attr.classDyn (accentHover |> View.Map (fun ah -> 
+                    sprintf "w-12 h-12 flex items-center justify-center rounded-full transition-all duration-300 neo-level-0 hover:neo-level-2 %s active:scale-90 transform" ah))
                 on.click (fun _ _ -> onClick())
             ] [icon]
 
-        let Select<'T when 'T : equality> (options: list<'T>) (current: Var<'T>) (toLabel: 'T -> string) (accent: View<string>) (accentHover: View<string>) (isRightAligned: bool) =
+        let Select<'T when 'T : equality> (options: list<'T>) (current: Var<'T>) (toLabel: 'T -> string) (placeholder: string) (accent: View<string>) (accentHover: View<string>) (isRightAligned: bool) =
             let isOpen = Var.Create false
             div [attr.classDyn (View.Const (if isRightAligned then "relative" else "relative w-full"))] [
+                // Click-outside overlay
+                isOpen.View |> View.Map (fun openState ->
+                    if openState then 
+                        div [attr.``class`` "fixed inset-0 z-[130]"; on.click (fun _ _ -> isOpen.Value <- false)] []
+                    else Doc.Empty
+                ) |> Doc.EmbedView
+                
                 button [
-                    attr.classDyn (accent |> View.Map (fun a -> sprintf "neo-nav-item px-6 py-3 rounded-xl flex items-center justify-center space-x-3 %s font-bold transition w-full" a))
+                    attr.classDyn (accent |> View.Map (fun a -> sprintf "neo-flat px-6 py-4 rounded-2xl flex items-center justify-between space-x-3 %s font-bold transition-all duration-300 w-full" a))
                     on.click (fun _ _ -> isOpen.Value <- not isOpen.Value)
                 ] [
-                    current.View |> View.Map (fun v -> text (toLabel v)) |> Doc.EmbedView
-                    Doc.Verbatim """<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>"""
+                    current.View |> View.Map (fun v -> 
+                        let label = toLabel v
+                        if System.String.IsNullOrEmpty label || label = "0" then 
+                            span [attr.``class`` "text-gray-400 font-medium"] [text placeholder]
+                        else text label
+                    ) |> Doc.EmbedView
+                    Doc.Verbatim """<svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>"""
                 ]
                 isOpen.View |> View.Map (fun openState ->
                     if openState then
                         let alignClass = if isRightAligned then "right-0 w-48" else "left-0 right-0"
-                        div [attr.``class`` (sprintf "absolute top-full %s mt-4 neo-flat rounded-2xl p-2 z-[140] overflow-hidden" alignClass)] [
+                        div [attr.``class`` (sprintf "absolute top-full %s mt-4 neo-flat rounded-3xl p-3 z-[140] overflow-hidden animate-in fade-in zoom-in-95 duration-200" alignClass)] [
                             options |> List.map (fun opt ->
                                 div [
-                                    attr.classDyn (accentHover |> View.Map (fun ah -> sprintf "p-3 hover:bg-opacity-10 rounded-xl cursor-pointer transition-colors font-medium text-gray-800 hover:%s" ah))
+                                    attr.classDyn (accentHover |> View.Map (fun ah -> 
+                                        let baseC = "p-5 rounded-2xl cursor-pointer transition-all duration-200 font-bold text-gray-700 hover:neo-level-2 "
+                                        if current.Value = opt then baseC + "pl-8 text-emerald-600"
+                                        else baseC))
                                     on.click (fun _ _ -> current.Value <- opt; isOpen.Value <- false)
                                 ] [text (toLabel opt)]
                             ) |> Doc.Concat
@@ -260,8 +314,6 @@ module Client =
         let email = Var.Create ""
         let password = Var.Create ""
         let showPassword = Var.Create false
-        let message = Var.Create ""
-        let msgColor = Var.Create "text-red-700 bg-red-100 border-red-500"
         
 
         let submit () =
@@ -270,18 +322,15 @@ module Client =
                 let atIdx = e.IndexOf("@")
                 let isValid = atIdx > 0 && e.IndexOf(".", atIdx) > atIdx + 1
                 if not isValid then
-                    msgColor.Value <- "text-red-700 bg-red-100 border-red-500"
-                    message.Value <- "Please provide a valid email address."
+                    showToast "Please provide a valid email address." Error
                 else
-                    message.Value <- "Logging in..."
-                    msgColor.Value <- "text-blue-700 bg-blue-100 border-blue-500"
+                    showToast "Logging in..." Info
                     let! res = Server.LoginUser(e, password.Value)
                     match res with
                     | AuthResult.NeedPasswordChange -> JS.Window.Location.Href <- "/change-password"
                     | AuthResult.LoggedIn (user, verified) -> JS.Window.Location.Href <- "/dashboard"
                     | AuthResult.Error err ->
-                        msgColor.Value <- "text-red-700 bg-red-100 border-red-500"
-                        message.Value <- err
+                        showToast err Error
                     | _ -> ()
             } |> Async.StartImmediate
 
@@ -315,11 +364,7 @@ module Client =
                      a [attr.href "/forgot-password"; attr.``class`` "text-sm text-blue-500 hover:text-blue-800 transition font-medium"] [text "Forgot Password?"]
                 ]
             ]
-            let season = View.Const (getSeason System.DateTime.Today)
-            let accentBg = season |> View.Map (fun s -> getSeasonTheme s "bg" "100")
-            Neo.Button [text "Log In"] accentBg (fun () -> submit())
-            
-            div [attr.classDyn (message.View |> View.Map (fun m -> if m = "" then "hidden" else "mt-4 border-l-4 p-4 rounded text-sm " + msgColor.Value))] [textView message.View]
+            Neo.FullWidthButton [text "Log In"] (View.Const "text-gray-800") (fun () -> submit())
         ]
 
     /// <summary>Asynchronously processes user identities into `Server.RegisterUser` natively dynamically updating the underlying form tracking mechanics without traditional DOM reload transitions.</summary>
@@ -327,8 +372,6 @@ module Client =
         let email = Var.Create ""
         let password = Var.Create ""
         let showPassword = Var.Create false
-        let message = Var.Create ""
-        let isError = Var.Create false
         
         let passwordStrength = password.View |> View.Map CalculatePasswordScore
         
@@ -350,19 +393,17 @@ module Client =
                 let pScore = CalculatePasswordScore p
                 
                 if not isValid then
-                    isError.Value <- true; message.Value <- "Please provide a valid email address."
+                    showToast "Please provide a valid email address." Error
                 elif pScore < 5 then
-                    isError.Value <- true; message.Value <- "Password does not meet the security requirements."
+                    showToast "Password does not meet the security requirements." Error
                 else
-                    message.Value <- "Processing..."
-                    isError.Value <- false
+                    showToast "Processing..." Info
                     let! res = Server.RegisterUser(e, p)
                     match res with
                     | AuthResult.LoggedIn (usr, _) ->
                         JS.Window.Location.Href <- "/dashboard"
                     | AuthResult.Error err ->
-                        isError.Value <- true
-                        message.Value <- err
+                        showToast err Error
                     | _ -> ()
             } |> Async.StartImmediate
 
@@ -410,11 +451,7 @@ module Client =
                 ]
                 PasswordStrengthView passwordStrength
             ]
-            let season = View.Const (getSeason System.DateTime.Today)
-            let accentBg = season |> View.Map (fun s -> getSeasonTheme s "bg" "100")
-            Neo.Button [text "Register Securely"] accentBg (fun () -> submit())
-
-            div [attr.classDyn (message.View |> View.Map (fun m -> if m = "" then "hidden" elif isError.Value then "mt-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded text-sm" else "mt-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded text-sm"))] [textView message.View]
+            Neo.FullWidthButton [text "Register Securely"] (View.Const "text-gray-800") (fun () -> submit())
         ]
 
     /// <summary>Dynamic wrapper automatically toggling securely between natively projected `LoginForm` and `RegistrationForm` identity mechanics gracefully within explicit runtime memory.</summary>
@@ -425,21 +462,19 @@ module Client =
             let season = View.Const (getSeason System.DateTime.Today)
             let accent = season |> View.Map (fun s -> getSeasonTheme s "text" "600")
             // Tabs
-            div [attr.``class`` "flex border-b border-gray-200 mb-8"] [
+            div [attr.``class`` "flex items-center justify-between space-x-4 mb-8 w-full"] [
                 button [
                     attr.classDyn (isLogin.View |> View.Map (fun l -> 
-                        let baseC = "w-1/2 py-4 text-center font-bold outline-none "
-                        if l then baseC + "border-b-2" else baseC + "text-gray-500"
+                        let baseC = "w-1/2 py-3 rounded-2xl text-center font-bold outline-none transition-all duration-300 transform active:scale-95 flex items-center justify-center "
+                        if l then baseC + "neo-pressed text-emerald-600 translate-y-px" else baseC + "neo-flat text-gray-600 hover:text-gray-900 hover:neo-level-2"
                     ))
-                    attr.classDyn (View.Map2 (fun l acc -> if l then "border-b-2 " + acc else "") isLogin.View accent)
                     on.click (fun _ _ -> isLogin.Value <- true)
                 ] [text "Login"]
                 button [
                     attr.classDyn (isLogin.View |> View.Map (fun l -> 
-                        let baseC = "w-1/2 py-4 text-center font-bold transition-all outline-none "
-                        if not l then baseC + "border-b-2" else baseC + "text-gray-500"
+                        let baseC = "w-1/2 py-3 rounded-2xl text-center font-bold outline-none transition-all duration-300 transform active:scale-95 flex items-center justify-center "
+                        if not l then baseC + "neo-pressed text-emerald-600 translate-y-px" else baseC + "neo-flat text-gray-600 hover:text-gray-900 hover:neo-level-2"
                     ))
-                    attr.classDyn (View.Map2 (fun l acc -> if not l then "border-b-2 " + acc else "") isLogin.View accent)
                     on.click (fun _ _ -> isLogin.Value <- false)
                 ] [text "Register"]
             ]
@@ -454,19 +489,18 @@ module Client =
     /// <summary>Structurally isolates explicit user magic link requests safely transmitting inputs deeply backwards synchronously into `Server.TriggerMagicLink` routines.</summary>
     let ForgotPassword () =
         let email = Var.Create ""
-        let message = Var.Create ""
         let isSuccess = Var.Create false
 
         let submit () =
             async {
-                message.Value <- "Dispatching magic link..."
+                showToast "Dispatching magic link..." Info
                 let! res = Server.TriggerMagicLink(email.Value)
                 match res with
                 | AuthResult.Success _ ->
                     isSuccess.Value <- true
-                    message.Value <- "If that email exists, a magic link has been sent to it!"
+                    showToast "If that email exists, a magic link has been sent to it!" Success
                 | AuthResult.Error e -> 
-                    isSuccess.Value <- false; message.Value <- e
+                    isSuccess.Value <- false; showToast e Error
                 | _ -> ()
             } |> Async.StartImmediate
 
@@ -483,60 +517,57 @@ module Client =
                 let accentBg = season |> View.Map (fun s -> getSeasonTheme s "bg" "100")
                 Neo.Button [text "Send Magic Link"] accentBg (fun () -> submit())
             ]
-            div [attr.classDyn (message.View |> View.Map (fun m -> if m = "" then "hidden" else "mt-4 p-4 rounded text-sm " + (if isSuccess.Value then "bg-green-100 text-green-800" else "bg-red-100 text-red-800")))] [textView message.View]
             div [attr.``class`` "text-center mt-6"] [ a [attr.href "/auth"; attr.``class`` "text-sm text-blue-500 font-medium"] [text "Back to Login"] ]
         ]
 
     /// <summary>Automatic interception controller digesting `token` parameters seamlessly directly unto `Server.AttemptVerifyEmail` instantly providing explicit success confirmations gracefully.</summary>
     let VerifyEmail (token: string) =
-        let message = Var.Create "Validating token..."
         async {
+            showToast "Validating token..." Info
             let! res = Server.AttemptVerifyEmail(token)
             match res with
-            | AuthResult.Success _ -> message.Value <- "Your email was successfully verified! You may securely browse."
-            | AuthResult.Error e -> message.Value <- e
+            | AuthResult.Success _ -> showToast "Your email was successfully verified! You may securely browse." Success
+            | AuthResult.Error e -> showToast e Error
             | _ -> ()
         } |> Async.StartImmediate
 
         GlassCard [
             h2 [attr.``class`` "text-2xl font-bold text-center mb-4"] [text "Email Verification"]
-            p [attr.``class`` "text-center text-lg text-gray-800"] [textView message.View]
             div [attr.``class`` "text-center mt-8"] [ a [attr.href "/"; attr.``class`` "text-blue-500 font-bold hover:underline"] [text "Go Home"] ]
         ]
 
     /// <summary>Deep context wrapper bypassing explicit standard credential input paths systematically explicitly running identity mappings synchronously.</summary>
     let MagicLogin (token: string) =
-        let message = Var.Create "Initiating magic entry sequence..."
         async {
+            showToast "Initiating magic entry sequence..." Info
             let! res = Server.AttemptMagicLogin(token)
             match res with
             | AuthResult.NeedPasswordChange -> JS.Window.Location.Href <- "/change-password"
-            | AuthResult.Error e -> message.Value <- e
+            | AuthResult.Error e -> showToast e Error
             | _ -> ()
         } |> Async.StartImmediate
 
         GlassCard [
             h2 [attr.``class`` "text-2xl font-bold text-center mb-4"] [text "Authenticating"]
-            p [attr.``class`` "text-center text-lg text-gray-800 animate-pulse"] [textView message.View]
         ]
         
     /// <summary>Restricted isolated structural payload permitting already-verified identities natively explicit modification access securely rewriting physical credentials back unto SQLite asynchronously.</summary>
     let ChangePassword () =
         let newpass = Var.Create ""
         let showPassword = Var.Create false
-        let message = Var.Create ""
         let submit () =
             async {
                 let p = newpass.Value
                 let pScore = CalculatePasswordScore p
                 
                 if pScore < 5 then
-                    message.Value <- "Password does not meet the security requirements."
+                    showToast "Password does not meet the security requirements." Error
                 else
+                    showToast "Updating..." Info
                     let! res = Server.ResetPassword(p)
                     match res with
                     | AuthResult.Success _ -> JS.Window.Location.Href <- "/"
-                    | AuthResult.Error e -> message.Value <- e
+                    | AuthResult.Error e -> showToast e Error
                     | _ -> ()
             } |> Async.StartImmediate
             
@@ -569,7 +600,6 @@ module Client =
             let season = View.Const (getSeason System.DateTime.Today)
             let accentBg = season |> View.Map (fun s -> getSeasonTheme s "bg" "100")
             Neo.Button [text "Update Credentials"] accentBg (fun () -> submit())
-            div [attr.classDyn (message.View |> View.Map(fun m -> if m = "" then "hidden" else "mt-4 p-4 text-sm bg-red-100 text-red-700 rounded"))] [textView message.View]
         ]
 
     /// <summary>Explicit top-level header logic routinely safely authenticating structural F# cookie variables directly backwards displaying User Verification mechanics natively asynchronously.</summary>
@@ -582,20 +612,18 @@ module Client =
 
         div [] [
             state.View |> View.Map (fun s ->
-                let season = View.Const (getSeason System.DateTime.Today)
-                let accentBg = season |> View.Map (fun s -> getSeasonTheme s "bg" "100")
                 match s with
                 | AuthResult.LoggedIn _ ->
                     div [attr.``class`` "flex items-center space-x-4"] [
                         a [
                             attr.href "/dashboard"
-                            attr.classDyn (accentBg |> View.Map (fun bg -> sprintf "neo-nav-item font-bold py-3 px-8 rounded-full %s" bg))
+                            attr.``class`` "font-bold py-3 px-8 rounded-2xl transition-all duration-300 transform active:scale-95 neo-flat text-gray-600 hover:text-gray-900 hover:neo-level-2"
                         ] [text "Dashboard"]
                     ]
                 | _ ->
                     a [
                         attr.href "/auth"
-                        attr.classDyn (accentBg |> View.Map (fun bg -> sprintf "neo-nav-item font-bold py-3 px-8 rounded-full %s" bg))
+                        attr.``class`` "font-bold py-3 px-8 rounded-2xl transition-all duration-300 transform active:scale-95 neo-flat text-gray-600 hover:text-gray-900 hover:neo-level-2"
                     ] [text "Login"]
             ) |> Doc.EmbedView
         ]
@@ -632,63 +660,64 @@ module Client =
                 ] [
                     for (name, url, iconPaths) in items do
                         li [
-                            attr.classDyn (View.Map3 (fun s acc collapsed -> 
-                                let baseClass = "cursor-pointer flex items-center "
-                                let activeClass = if active = name then "neo-nav-active " + (getSeasonTheme s "text" "600") else (sprintf "text-gray-800 neo-nav-item %s" (getSeasonTheme s "hover:text" "500"))
-                                let shapeClass = if collapsed then "w-12 h-12 rounded-full aspect-square justify-center flex-shrink-0" else "w-full p-4 rounded-2xl space-x-4"
-                                baseClass + activeClass + shapeClass
-                            ) season accentHover isCollapsed)
+                            attr.classDyn (View.Map2 (fun s collapsed -> 
+                                let baseClass = "cursor-pointer flex items-center transition-none duration-0 "
+                                if active = name then 
+                                    let shapeClass = if collapsed then "w-12 h-12 rounded-full justify-center" else "w-full p-4 rounded-2xl space-x-4"
+                                    baseClass + "neo-pressed text-emerald-600 " + shapeClass
+                                else
+                                    let shapeClass = if collapsed then "w-12 h-12 rounded-full justify-center" else "w-full p-4 rounded-2xl space-x-4"
+                                    baseClass + "text-gray-700 neo-level-0 hover:neo-level-2 active:neo-pressed hover:text-emerald-600 " + shapeClass
+                            ) season isCollapsed)
                             on.click (fun _ _ -> JS.Window.Location.Href <- url)
                         ] [
                             Doc.Verbatim (sprintf """<svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">%s</svg>""" iconPaths)
                             isCollapsed |> View.Map (fun collapsed -> 
-                                if not collapsed then span [attr.``class`` "ml-4 font-semibold text-sm"] [text name]
+                                if not collapsed then span [attr.``class`` "ml-4 font-bold text-sm"] [text name]
                                 else Doc.Empty
                             ) |> Doc.EmbedView
                         ]
                 ]
             ]
             
-            // Bottom Section: Avatar & Action Buttons
+            // Bottom Section: Action Buttons (Avatar, Settings, Collapse)
             div [
                 attr.classDyn (isCollapsed |> View.Map (fun collapsed -> 
-                    let baseC = "flex mt-auto w-full "
-                    if collapsed then baseC + "flex-col items-center space-y-4" else baseC + "items-center justify-between"
+                    if collapsed then "flex flex-col items-center space-y-4 w-full" 
+                    else "flex items-center justify-between w-full"
                 ))
             ] [
-                // Avatar & Name/Email
-                div [attr.``class`` "flex items-center space-x-3 overflow-hidden"] [
-                    div [
-                        attr.classDyn (accentBg |> View.Map (fun bg -> sprintf "w-12 h-12 flex-shrink-0 rounded-full flex items-center justify-center %s font-bold overflow-hidden" bg))
-                        attr.classDyn (accentText |> View.Map (fun textCol -> textCol))
-                    ] [
-                       let v = Var.Create (Doc.Empty)
-                       async {
-                           let! settings = Server.GetUserSettings()
-                           let! auth = Server.CheckAuthState()
-                           let initial = 
-                               match auth with
-                               | AuthResult.LoggedIn (u, _) -> getInitials u
-                               | _ -> "U"
-                           
-                           v.Value <-
-                               match settings.AvatarUrl with
-                               | Some url when not (System.String.IsNullOrWhiteSpace(url)) ->
-                                   img [attr.src url; attr.``class`` "w-full h-full object-cover"] []
-                               | _ -> text initial
-                       } |> Async.StartImmediate
-                       v.View |> Doc.EmbedView
-                    ]
-                    
-                    isCollapsed |> View.Map (fun collapsed ->
-                        if not collapsed then
-                            div [attr.``class`` "flex flex-col overflow-hidden"] [
-                                span [attr.``class`` "text-sm font-bold text-gray-800 truncate max-w-[120px]"] [textView username.View]
-                            ]
-                        else Doc.Empty
-                    ) |> Doc.EmbedView
-                ]
+                // Avatar Button (Links to Public Profile)
+                let userInitials = Var.Create "U"
+                let userProfileUrl = Var.Create "/settings"
                 
+                async {
+                    let! settings = Server.GetUserSettings()
+                    let! auth = Server.CheckAuthState()
+                    match auth with
+                    | AuthResult.LoggedIn (u, _) -> 
+                        userInitials.Value <- getInitials u
+                        userProfileUrl.Value <- sprintf "/@%s" u
+                    | _ -> ()
+                } |> Async.StartImmediate
+
+                button [
+                    attr.classDyn (userProfileUrl.View |> View.Map (fun _ -> 
+                        "w-12 h-12 flex-shrink-0 rounded-full flex items-center justify-center neo-level-0 hover:neo-level-2 p-0 overflow-hidden font-bold cursor-pointer active:scale-90 active:neo-pressed transition-none duration-0"))
+                    on.click (fun _ _ -> JS.Window.Location.Href <- userProfileUrl.Value)
+                ] [
+                    let v = Var.Create (Doc.Empty)
+                    async {
+                        let! settings = Server.GetUserSettings()
+                        v.Value <-
+                            match settings.AvatarUrl with
+                            | Some url when not (System.String.IsNullOrWhiteSpace(url)) ->
+                                img [attr.src url; attr.``class`` "w-full h-full object-cover"] []
+                            | _ -> span [attr.classDyn (season |> View.Map (fun s -> getSeasonTheme s "text" "500"))] [textView userInitials.View]
+                    } |> Async.StartImmediate
+                    v.View |> Doc.EmbedView
+                ]
+
                 // Actions: Gear and Expand/Collapse
                 div [
                     attr.classDyn (isCollapsed |> View.Map (fun collapsed -> 
@@ -696,38 +725,36 @@ module Client =
                         else "flex items-center space-x-2"
                     ))
                 ] [
-                    a [
-                       attr.href "/settings"
-                       attr.classDyn (View.Map2 (fun s acc ->
-                            let baseC = "w-12 h-12 flex items-center justify-center rounded-full cursor-pointer flex-shrink-0 "
-                            if acc = "Settings" then baseC + "neo-nav-active " + (getSeasonTheme s "text" "600")
-                            else baseC + "text-gray-700 neo-nav-item"
-                       ) season (View.Const active))
+                    // Settings Gear
+                    button [
+                        attr.classDyn (isCollapsed |> View.Map (fun _ ->
+                            let baseC = "w-12 h-12 flex items-center justify-center rounded-full cursor-pointer flex-shrink-0 transition-none duration-0 "
+                            if active = "Settings" then baseC + "neo-pressed text-emerald-600"
+                            else baseC + "text-gray-700 neo-level-0 hover:neo-level-2 active:neo-pressed hover:text-emerald-600"
+                        ))
+                        on.click (fun _ _ -> JS.Window.Location.Href <- "/settings")
                     ] [
                         Doc.Verbatim """<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>"""
                     ]
-                    
-                    isCollapsed |> View.Map (fun collapsed ->
-                        if collapsed then
-                            button [
-                                attr.``class`` "w-12 h-12 flex items-center justify-center rounded-full text-gray-700 neo-nav-item cursor-pointer active:scale-95"
-                                on.click (fun _ _ -> onToggle())
-                            ] [
-                                Doc.Verbatim """<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>"""
-                            ]
-                        else
-                            button [
-                                attr.``class`` "w-12 h-12 flex items-center justify-center rounded-full text-gray-700 neo-nav-item cursor-pointer active:scale-95"
-                                on.click (fun _ _ -> onToggle())
-                            ] [
-                                Doc.Verbatim """<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7M19 19l-7-7 7-7"></path></svg>"""
-                            ]
-                    ) |> Doc.EmbedView
+
+                    // Collapse Toggle
+                    button [
+                        attr.classDyn (isCollapsed |> View.Map (fun _ -> 
+                            "w-12 h-12 flex items-center justify-center rounded-full text-gray-700 neo-level-0 hover:neo-level-2 active:neo-pressed cursor-pointer active:scale-90 transition-none duration-0"
+                        ))
+                        on.click (fun _ _ -> onToggle())
+                    ] [
+                        isCollapsed |> View.Map (fun collapsed ->
+                            if collapsed then Doc.Verbatim """<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>"""
+                            else Doc.Verbatim """<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>"""
+                        ) |> Doc.EmbedView
+                    ]
                 ]
             ]
         ]
 
     let Dashboard () =
+        disableTransitionsOnLoad()
         let username = Var.Create "Loading..."
         let season = View.Const (getSeason System.DateTime.Today)
         async {
@@ -738,7 +765,7 @@ module Client =
         } |> Async.StartImmediate
 
         div [attr.``class`` "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0"] [
-            Sidebar "Dashboard" username season (View.Const false) (fun () -> ())
+            Sidebar "Dashboard" username season isMenuCollapsed.View (fun () -> isMenuCollapsed.Value <- not isMenuCollapsed.Value)
             div [attr.``class`` "flex-1 p-10 overflow-y-auto w-full"] [
                 h1 [attr.``class`` "text-4xl font-extrabold text-gray-900 mb-6"] [text "Welcome Back!"]
                 p [attr.``class`` "text-gray-800"] [text "This is your newly generated workspace dashboard."]
@@ -746,21 +773,42 @@ module Client =
         ]
 
     let SettingsPanel () =
+        let usernameStatus = Var.Create (None : bool option)
+        let usernameMessage = Var.Create ""
+        let userSettings = Var.Create { Username = ""; Email = ""; PendingEmail = None; CalendarStartDay = "Monday"; AvatarUrl = None; IsProfilePublic = true }
+        let healthSettings = Var.Create { Sex = "Male"; BloodType = ""; JobType = ""; ExerciseFrequency = ""; ExerciseTypes = ""; HeightCm = 175.0; WeightKg = 70.0; BirthYear = 1990; BirthMonth = 1; BirthDay = 1 }
+        
         let username = Var.Create "Loading..."
         let newUsername = Var.Create ""
         let email = Var.Create "user@example.com"
-        let password = Var.Create ""
+        let isProfilePublic = Var.Create true
         let activeTab = Var.Create "Account"
         let calendarStartDay = Var.Create "Monday"
         let avatarUrl = Var.Create ""
+        let newPassword = Var.Create ""
+        let confirmPassword = Var.Create ""
+        let isValidEmail (e: string) = e.Length > 3 && e.Contains("@")
+        
+        // Debounced username check
+        newUsername.View 
+        |> View.Sink (fun u ->
+            if u <> username.Value && u.Length >= 3 then
+                async {
+                    usernameMessage.Value <- "Checking..."
+                    let! available = Server.CheckUsernameAvailability u
+                    usernameStatus.Value <- Some available
+                    usernameMessage.Value <- if available then "Available" else "Taken"
+                } |> Async.StartImmediate
+            else
+                usernameStatus.Value <- None
+                usernameMessage.Value <- ""
+        )
         
         let season = View.Const (getSeason System.DateTime.Today)
         let accentText = season |> View.Map (fun s -> getSeasonTheme s "text" "600")
         let accentBg = season |> View.Map (fun s -> getSeasonTheme s "bg" "100")
         let accentHoverCol = season |> View.Map (fun s -> getSeasonTheme s "hover:text" "500")
         
-        let message = Var.Create ""
-        let isSuccess = Var.Create false
 
         async {
             let! res = Server.CheckAuthState()
@@ -769,8 +817,14 @@ module Client =
                 username.Value <- u
                 newUsername.Value <- u
                 let! settings = Server.GetUserSettings()
+                userSettings.Value <- settings
                 calendarStartDay.Value <- settings.CalendarStartDay
                 avatarUrl.Value <- defaultArg settings.AvatarUrl ""
+                email.Value <- settings.Email
+                isProfilePublic.Value <- settings.IsProfilePublic
+
+                let! health = Server.GetHealthSettings()
+                healthSettings.Value <- health
             | _ -> JS.Window.Location.Href <- "/"
         } |> Async.StartImmediate
 
@@ -779,76 +833,255 @@ module Client =
         |> View.Sink (fun day ->
             if day <> "Loading..." && username.Value <> "Loading..." then 
                 async {
-                    let! _ = Server.UpdateUserSettings { CalendarStartDay = day; AvatarUrl = Some avatarUrl.Value }
+                    let! _ = Server.UpdateUserSettings { userSettings.Value with CalendarStartDay = day; AvatarUrl = Some avatarUrl.Value }
                     ()
                 } |> Async.StartImmediate
         )
 
         let submit () =
             async {
-                message.Value <- "Updating..."
+                showToast "Updating..." Info
                 let! res = Server.UpdateUsername newUsername.Value
                 match res with
                 | AuthResult.LoggedIn (u, _) ->
                     username.Value <- u
-                    isSuccess.Value <- true
-                    message.Value <- "Account updated successfully!"
                     showToast "Profile name updated!" Success
                 | AuthResult.Error e ->
-                    isSuccess.Value <- false
-                    message.Value <- e
                     showToast e Error
                 | _ -> ()
             } |> Async.StartImmediate
 
-        let accountTab () =
+        let healthTab () =
             div [attr.``class`` "max-w-md w-full"] [
-                 div [attr.``class`` "neo-flat p-8 rounded-3xl mb-8"] [
-                    // Avatar Upload Section
-                    div [attr.``class`` "flex items-center space-x-6 mb-8 border-b border-gray-100 pb-8"] [
-                        div [attr.``class`` "w-20 h-20 rounded-full neo-flat flex items-center justify-center text-2xl font-bold overflow-hidden"] [
-                            avatarUrl.View |> View.Map (fun url ->
-                                if System.String.IsNullOrWhiteSpace(url) then
-                                    username.View |> View.Map (fun u -> if u.Length > 0 then u.Substring(0,1).ToUpper() else "U") |> textView
-                                else
-                                    img [attr.src url; attr.``class`` "w-full h-full object-cover"] []
-                            ) |> Doc.EmbedView
-                        ]
+                div [attr.``class`` "neo-flat p-8 rounded-3xl mb-8"] [
+                    h3 [attr.``class`` "text-lg font-bold text-gray-800 mb-8 border-b border-gray-100 pb-4"] [text "Health Information"]
+                    
+                    div [attr.``class`` "space-y-8"] [
+                        // Biological Sex
                         div [] [
-                            h3 [attr.``class`` "text-lg font-bold text-gray-800"] [text "Profile Avatar"]
-                            p [attr.``class`` "text-xs text-gray-500 mb-3"] [text "Enter an image URL or Gravatar."]
-                            Neo.Button [text "Change Avatar URL"] accentText (fun () -> 
-                                let url = JS.Window.Prompt("Avatar Image URL:", avatarUrl.Value)
-                                if not (isNull url) then 
-                                    avatarUrl.Value <- url
-                                    async {
-                                        let! _ = Server.UpdateUserSettings { CalendarStartDay = calendarStartDay.Value; AvatarUrl = Some url }
-                                        ()
-                                    } |> Async.StartImmediate
-                            )
+                            label [attr.``class`` "block text-gray-800 text-sm font-bold mb-4 pl-2"] [text "Biological Sex"]
+                            div [attr.``class`` "flex space-x-4"] [
+                                for sex in ["Male"; "Female"; "Other"] do
+                                    button [
+                                        attr.classDyn (healthSettings.View |> View.Map (fun hs -> 
+                                            let baseClass = "flex-1 py-4 rounded-2xl font-bold transition-all duration-300 "
+                                            if hs.Sex = sex then baseClass + "neo-pressed text-emerald-600"
+                                            else baseClass + "neo-flat text-gray-600 hover:text-gray-900"
+                                        ))
+                                        on.click (fun _ _ -> healthSettings.Value <- { healthSettings.Value with Sex = sex })
+                                    ] [text sex]
+                            ]
+                        ]
+
+                        // Dropdowns
+                        div [] [
+                            label [attr.``class`` "block text-gray-800 text-sm font-bold mb-3 pl-2"] [text "Blood Type"]
+                            Neo.Select ["A+"; "A-"; "B+"; "B-"; "AB+"; "AB-"; "O+"; "O-"] 
+                                (healthSettings.Lens (fun hs -> hs.BloodType) (fun hs v -> { hs with BloodType = v })) 
+                                id "Select Bloodtype" accentText accentBg false
+                        ]
+
+                        div [] [
+                            label [attr.``class`` "block text-gray-800 text-sm font-bold mb-3 pl-2"] [text "Type of Job"]
+                            Neo.Select ["Sedentary"; "Lightly Active"; "Moderately Active"; "Very Active"; "Extreme"] 
+                                (healthSettings.Lens (fun hs -> hs.JobType) (fun hs v -> { hs with JobType = v })) 
+                                id "Select Type of Job" accentText accentBg false
+                        ]
+
+                        div [] [
+                            label [attr.``class`` "block text-gray-800 text-sm font-bold mb-3 pl-2"] [text "Exercise Frequency"]
+                            Neo.Select ["Never"; "1-2 times/week"; "3-4 times/week"; "Daily"; "Athletic"] 
+                                (healthSettings.Lens (fun hs -> hs.ExerciseFrequency) (fun hs v -> { hs with ExerciseFrequency = v })) 
+                                id "Select Exercise Frequency" accentText accentBg false
+                        ]
+
+                        // Multiselect Exercise Types
+                        div [] [
+                            label [attr.``class`` "block text-gray-800 text-sm font-bold mb-4 pl-2"] [text "Type of Exercise"]
+                            div [attr.``class`` "grid grid-cols-2 gap-3"] [
+                                for exercise in ["Running"; "Swimming"; "Cycling"; "Gym"; "Yoga"; "Sports"; "Hiking"; "Pilates"] do
+                                    button [
+                                        attr.classDyn (healthSettings.View |> View.Map (fun hs -> 
+                                            let baseClass = "py-3 px-4 rounded-xl font-bold text-xs transition-all duration-200 "
+                                            let selected = hs.ExerciseTypes.Split([|','|], System.StringSplitOptions.RemoveEmptyEntries)
+                                            if selected |> Array.contains exercise then baseClass + "neo-pressed text-emerald-600"
+                                            else baseClass + "neo-flat text-gray-600 hover:text-emerald-400"
+                                        ))
+                                        on.click (fun _ _ -> 
+                                            let current = healthSettings.Value.ExerciseTypes.Split([|','|], System.StringSplitOptions.RemoveEmptyEntries)
+                                            let next = 
+                                                if current |> Array.contains exercise then current |> Array.filter (fun e -> e <> exercise)
+                                                else Array.append current [|exercise|]
+                                            healthSettings.Value <- { healthSettings.Value with ExerciseTypes = String.concat "," next }
+                                        )
+                                    ] [text exercise]
+                            ]
                         ]
                     ]
 
-                    div [attr.``class`` "space-y-6"] [
-                        div [] [
-                            label [attr.``class`` "block text-gray-800 text-sm font-bold mb-3 pl-2"] [text "Username"]
-                            Doc.InputType.Text [attr.``class`` "neo-pressed rounded-xl w-full py-3 px-5 text-gray-800 focus:outline-none transition"] newUsername
-                        ]
-                        div [] [
-                            label [attr.``class`` "block text-gray-800 text-sm font-bold mb-3 pl-2"] [text "Email Address"]
-                            Doc.InputType.Email [attr.``class`` "neo-pressed rounded-xl w-full py-3 px-5 text-gray-800 focus:outline-none transition opacity-60"] email
-                        ]
-                        div [] [
-                            label [attr.``class`` "block text-gray-800 text-sm font-bold mb-3 pl-2"] [text "Password"]
-                            Doc.InputType.Password [attr.``class`` "neo-pressed rounded-xl w-full py-3 px-5 text-gray-800 focus:outline-none transition placeholder:text-gray-400"] password
+                    div [attr.``class`` "mt-10"] [
+                        Neo.Button [text "Save Health Profile"] accentBg (fun () -> 
+                            async {
+                                let! res = Server.SaveHealthSettings healthSettings.Value
+                                match res with
+                                | AuthResult.Success _ -> showToast "Health profile saved!" Success
+                                | AuthResult.Error e -> showToast e Error
+                                | _ -> ()
+                            } |> Async.StartImmediate
+                        )
+                    ]
+                ]
+            ]
+
+        let accountTab () =
+            div [attr.``class`` "max-w-md w-full"] [
+                 div [attr.``class`` "neo-flat p-8 rounded-3xl mb-8"] [
+                    
+                    // Avatar Upload Section
+                    div [attr.``class`` "flex flex-col items-center justify-center mb-10 w-full"] [
+                        div [attr.``class`` "relative group"] [
+                            div [attr.``class`` "w-32 h-32 rounded-full neo-level-1 hover:neo-level-2 transition-all duration-300 flex items-center justify-center text-4xl font-bold overflow-hidden cursor-pointer relative"] [
+                                avatarUrl.View |> View.Map (fun url ->
+                                    if System.String.IsNullOrWhiteSpace(url) then
+                                        username.View |> View.Map (fun u -> if u.Length > 0 then u.Substring(0,1).ToUpper() else "U") |> textView
+                                    else
+                                        img [attr.src url; attr.``class`` "w-full h-full object-cover"] []
+                                ) |> Doc.EmbedView
+                                
+                                // Hidden file input covering the whole avatar
+                                Elt.input [
+                                    attr.``type`` "file"
+                                    attr.accept "image/*"
+                                    attr.``class`` "absolute inset-0 opacity-0 cursor-pointer w-full h-full z-50"
+                                    on.change (fun el _ ->
+                                        JS.Inline("""
+                                            var file = $0.files[0];
+                                            if (file) {
+                                                var reader = new FileReader();
+                                                reader.onload = function(e) {
+                                                    $1(e.target.result);
+                                                };
+                                                reader.readAsDataURL(file);
+                                            }
+                                        """, el, fun (b64: string) ->
+                                            async {
+                                                showToast "Uploading avatar..." Info
+                                                let! res = Server.UploadAvatarBase64(b64)
+                                                match res with
+                                                | Result.Ok newUrl -> 
+                                                    avatarUrl.Value <- newUrl
+                                                    userSettings.Value <- { userSettings.Value with AvatarUrl = Some newUrl }
+                                                    showToast "Avatar updated!" Success
+                                                | Result.Error e -> showToast e Error
+                                            } |> Async.StartImmediate
+                                        )
+                                    )
+                                ] []
+                            ]
                         ]
                     ]
                     
-                    Neo.Button [text "Save Account Changes"] accentBg (fun () -> submit())
+                    div [attr.``class`` "h-px w-full bg-white opacity-40 my-10"] []
+
+                    // Username Section
+                    div [attr.``class`` "space-y-4"] [
+                        label [attr.``class`` "block text-gray-800 text-sm font-bold mb-3 pl-2"] [text "Username"]
+                        div [attr.``class`` "relative"] [
+                            Doc.InputType.Text [attr.``class`` "neo-pressed rounded-xl w-full py-3 px-5 text-gray-800 focus:outline-none transition"] newUsername
+                            div [attr.``class`` "absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-2"] [
+                                usernameStatus.View |> View.Map (fun status ->
+                                    match status with
+                                    | Some true -> Doc.Verbatim """<svg class="w-5 h-5 text-emerald-500 animate-in fade-in zoom-in" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>"""
+                                    | Some false -> Doc.Verbatim """<svg class="w-5 h-5 text-red-500 animate-in fade-in zoom-in" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>"""
+                                    | None -> Doc.Empty
+                                ) |> Doc.EmbedView
+                            ]
+                        ]
+                        Neo.FullWidthButton [text "Save"] (View.Const "text-gray-800") (fun () -> submit())
+                    ]
                     
-                    div [
-                        attr.classDyn (message.View |> View.Map (fun m -> if m = "" then "hidden" else "mt-6 p-4 rounded-xl text-center text-sm " + (if isSuccess.Value then "bg-green-100 text-green-700" else "bg-red-100 text-red-700")))
-                    ] [textView message.View]
+                    div [attr.``class`` "h-px w-full bg-white opacity-40 my-10"] []
+
+                    // Email Address Section
+                    div [attr.``class`` "space-y-4"] [
+                        label [attr.``class`` "block text-gray-800 text-sm font-bold mb-3 pl-2"] [text "Email Address"]
+                        div [attr.``class`` "relative w-full"] [
+                            Doc.InputType.Email [attr.``class`` "neo-pressed rounded-xl w-full py-3 px-5 text-gray-800 focus:outline-none transition"] email
+                            div [attr.``class`` "pt-2"] [
+                                div [attr.``class`` "h-1 w-full bg-gray-200 rounded-full overflow-hidden"] [
+                                    div [
+                                        attr.classDyn (email.View |> View.Map (fun e -> 
+                                            if isValidEmail e then "h-full bg-emerald-500 transition-all duration-300 w-full"
+                                            else if e.Length > 0 then "h-full bg-red-500 transition-all duration-300 w-1/4"
+                                            else "h-full bg-transparent"
+                                        ))
+                                    ] []
+                                ]
+                            ]
+                        ]
+                        Neo.FullWidthButton [text "Save"] (View.Const "text-gray-800") (fun () -> 
+                            if not (isValidEmail email.Value) then showToast "Invalid email!" Error
+                            else
+                                async {
+                                    let! res = Server.ChangeEmailDirect(email.Value)
+                                    match res with
+                                    | AuthResult.Success _ -> showToast "Email updated!" Success
+                                    | AuthResult.Error e -> showToast e Error
+                                    | _ -> ()
+                                } |> Async.StartImmediate
+                        )
+                    ]
+                    
+                    div [attr.``class`` "h-px w-full bg-white opacity-40 my-10"] []
+
+                    // Change Password Section
+                    div [attr.``class`` "space-y-4"] [
+                        label [attr.``class`` "block text-gray-800 text-sm font-bold mb-3 pl-2"] [text "Change Password"]
+                        div [attr.``class`` "relative"] [
+                            Doc.InputType.Password [attr.``class`` "neo-pressed rounded-xl w-full py-3 px-5 text-gray-800 focus:outline-none transition"; attr.placeholder "New Password"] newPassword
+                        ]
+                        div [attr.``class`` "relative"] [
+                            Doc.InputType.Password [attr.``class`` "neo-pressed rounded-xl w-full py-3 px-5 text-gray-800 focus:outline-none transition"; attr.placeholder "Confirm Password"] confirmPassword
+                        ]
+                        PasswordStrengthView (newPassword.View |> View.Map CalculatePasswordScore)
+                        Neo.FullWidthButton [text "Update Password"] (View.Const "text-gray-800") (fun () -> 
+                            if newPassword.Value <> confirmPassword.Value then showToast "Passwords do not match!" Error
+                            else if newPassword.Value = "" then showToast "Password cannot be empty!" Error
+                            else 
+                                async {
+                                    let! res = Server.ChangePassword(newPassword.Value)
+                                    match res with
+                                    | AuthResult.Success _ -> showToast "Password updated!" Success; newPassword.Value <- ""; confirmPassword.Value <- ""
+                                    | AuthResult.Error e -> showToast e Error
+                                    | _ -> ()
+                                } |> Async.StartImmediate
+                        )
+                    ]
+                    
+                    div [attr.``class`` "h-px w-full bg-white opacity-40 my-10"] []
+
+                    // Profile Privacy Switch
+                    div [attr.``class`` "flex items-center justify-between"] [
+                        div [] [
+                            label [attr.``class`` "block text-gray-800 text-sm font-bold mb-1 pl-2"] [text "Public Profile"]
+                            p [attr.``class`` "text-xs text-gray-500 pl-2"] [text "Make your @username profile available to others."]
+                        ]
+                        label [attr.``class`` "cursor-pointer relative"] [
+                            Doc.InputType.CheckBox [
+                                attr.``class`` "sr-only peer"
+                                on.change (fun _ _ ->
+                                    async {
+                                        let! res = Server.ToggleProfilePublic(isProfilePublic.Value)
+                                        match res with
+                                        | AuthResult.Success _ -> showToast "Privacy updated!" Success
+                                        | AuthResult.Error e -> showToast e Error
+                                        | _ -> ()
+                                    } |> Async.StartImmediate
+                                )
+                            ] isProfilePublic
+                            div [attr.``class`` "w-11 h-6 neo-pressed rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:neo-level-1 after:bg-[#e0e5ec] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-400"] []
+                        ]
+                    ]
                 ]
             ]
 
@@ -859,12 +1092,12 @@ module Client =
                     
                     div [attr.``class`` "mb-6"] [
                         label [attr.``class`` "block text-gray-800 text-sm font-bold mb-3 pl-2"] [text "First day of the week"]
-                        Neo.Select ["Monday"; "Sunday"; "Saturday"] calendarStartDay id accentText accentBg false
+                        Neo.Select ["Monday"; "Sunday"; "Saturday"] calendarStartDay id "Select Day" accentText accentBg false
                     ]
 
                     Neo.Button [text "Update Calendar"] accentBg (fun () -> 
                         async {
-                            let! res = Server.UpdateUserSettings { CalendarStartDay = calendarStartDay.Value; AvatarUrl = Some avatarUrl.Value }
+                            let! res = Server.UpdateUserSettings { userSettings.Value with CalendarStartDay = calendarStartDay.Value }
                             match res with
                             | AuthResult.Success _ -> showToast "Calendar settings saved!" Success
                             | AuthResult.Error e -> showToast e Error
@@ -882,25 +1115,50 @@ module Client =
                 ]
             ]
 
+        disableTransitionsOnLoad()
         div [attr.``class`` "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0"] [
-            Sidebar "Settings" username season (View.Const false) (fun () -> ())
+            Sidebar "Settings" username season isMenuCollapsed.View (fun () -> isMenuCollapsed.Value <- not isMenuCollapsed.Value)
             div [attr.``class`` "flex-1 p-10 overflow-y-auto w-full flex flex-col"] [
                 h1 [attr.``class`` "text-4xl font-extrabold text-gray-900 mb-10"] [text "Settings"]
                 
-                // Tabs Navigation
-                div [attr.``class`` "flex space-x-6 mb-10"] [
-                    for tab in ["Account"; "Calendar"; "Other"] do
-                        button [
-                            attr.classDyn (activeTab.View |> View.Map (fun t -> 
-                                let baseClass = "px-8 py-3 rounded-2xl font-bold transition-all duration-300 transform active:scale-95 "
-                                if t = tab then 
-                                    baseClass + "neo-pressed bg-opacity-20 translate-y-px"
-                                else 
-                                    baseClass + "neo-flat text-gray-600 hover:text-gray-900"
-                            ))
-                            attr.classDyn (accentText |> View.Map (fun at -> if activeTab.Value = tab then at else ""))
-                            on.click (fun _ _ -> activeTab.Value <- tab)
-                        ] [text tab]
+                // Tabs Navigation Header
+                div [attr.``class`` "flex items-center justify-between mb-10"] [
+                    div [attr.``class`` "flex flex-wrap gap-4"] [
+                        let tabs = [
+                            ("Account", """<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>""")
+                            ("Health", """<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>""")
+                            ("Calendar", """<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>""")
+                            ("Other", """<circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>""")
+                        ]
+                        for (tabName, iconSvg) in tabs do
+                            button [
+                                attr.classDyn (activeTab.View |> View.Map (fun t -> 
+                                    let baseClass = "flex items-center space-x-3 px-8 py-3 rounded-2xl font-bold transition-all duration-300 transform active:scale-95 "
+                                    if t = tabName then 
+                                        baseClass + "neo-pressed text-emerald-600 bg-opacity-20 translate-y-px"
+                                    else 
+                                        baseClass + "neo-flat text-gray-600 hover:text-gray-900"
+                                ))
+                                on.click (fun _ _ -> activeTab.Value <- tabName)
+                            ] [
+                                Doc.Verbatim (sprintf """<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">%s</svg>""" iconSvg)
+                                span [] [text tabName]
+                            ]
+                    ]
+                    
+                    // Logout Button in Header matching Tab Style
+                    button [
+                        attr.``class`` "flex items-center space-x-3 px-8 py-3 rounded-2xl font-bold transition-all duration-300 transform active:scale-95 text-red-500 neo-flat hover:text-red-700 ml-4 active:neo-pressed active:translate-y-px"
+                        on.click (fun _ _ -> 
+                            async {
+                                let! _ = Server.Logout()
+                                JS.Window.Location.Href <- "/"
+                            } |> Async.StartImmediate
+                        )
+                    ] [
+                       Doc.Verbatim """<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>"""
+                       span [] [text "Logout"]
+                    ]
                 ]
 
                 // Tab Content
@@ -908,6 +1166,7 @@ module Client =
                     activeTab.View |> View.Map (fun t ->
                         match t with
                         | "Account" -> accountTab()
+                        | "Health" -> healthTab()
                         | "Calendar" -> calendarTab()
                         | "Other" -> otherTab()
                         | _ -> Doc.Empty
@@ -917,6 +1176,7 @@ module Client =
         ]
 
     let PlannerPage () =
+        disableTransitionsOnLoad()
         let username = Var.Create "Loading..."
         let refDate = Var.Create System.DateTime.Today
         let currentSeason = refDate.View |> View.Map getSeason
@@ -975,14 +1235,14 @@ module Client =
         let startOfWeek = refDate.View |> View.Map (fun d -> d.AddDays(float (1 - (if int d.DayOfWeek = 0 then 7 else int d.DayOfWeek))))
 
         div [attr.``class`` "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0"] [
-            Sidebar "Planner" username currentSeason (View.Const false) (fun () -> ())
+            Sidebar "Planner" username currentSeason isMenuCollapsed.View (fun () -> isMenuCollapsed.Value <- not isMenuCollapsed.Value)
             div [attr.``class`` "flex-1 p-10 overflow-y-auto w-full"] [
                 div [attr.``class`` "flex justify-between items-center mb-10"] [
                     h1 [attr.``class`` "text-4xl font-extrabold text-gray-900"] [text "Meal Planner"]
                     div [attr.``class`` "flex space-x-3"] [
-                        Neo.IconButton (Doc.Verbatim """<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>""") accentHover (fun () -> refDate.Value <- refDate.Value.AddDays(-7.0); loadPlannerData())
+                        Neo.IconButton (Doc.Verbatim """<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>""") accentHover (fun () -> refDate.Value <- refDate.Value.AddDays(-7.0); loadPlannerData())
                         Neo.Button [text "This Week"] accent (fun () -> refDate.Value <- System.DateTime.Today; loadPlannerData())
-                        Neo.IconButton (Doc.Verbatim """<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>""") accentHover (fun () -> refDate.Value <- refDate.Value.AddDays(7.0); loadPlannerData())
+                        Neo.IconButton (Doc.Verbatim """<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>""") accentHover (fun () -> refDate.Value <- refDate.Value.AddDays(7.0); loadPlannerData())
                     ]
                 ]
 
@@ -998,11 +1258,11 @@ module Client =
                                 div [attr.``class`` "space-y-6"] [
                                     div [] [
                                         label [attr.``class`` "block text-xs font-bold text-gray-700 mb-2 pl-2"] [text "Meal Slot"]
-                                        Neo.Select ["Breakfast"; "Lunch"; "Dinner"; "Snack"] selectedMealType id accent accentHover false
+                                        Neo.Select ["Breakfast"; "Lunch"; "Dinner"; "Snack"] selectedMealType id "Select Slot" accent accentHover false
                                     ]
                                     div [] [
                                         label [attr.``class`` "block text-xs font-bold text-gray-700 mb-2 pl-2"] [text "Select Recipe"]
-                                        Neo.Select (("-1", "Custom Meal") :: (recipesList.Value |> Array.toList |> List.map (fun r -> string r.Id, r.Name))) selectedRecipeId snd accent accentHover false
+                                        Neo.Select (("-1", "Custom Meal") :: (recipesList.Value |> Array.toList |> List.map (fun r -> string r.Id, r.Name))) selectedRecipeId snd "Select Recipe" accent accentHover false
                                     ]
                                     selectedRecipeId.View |> View.Map (fun (rid, _) ->
                                         if rid = "-1" then
@@ -1070,6 +1330,7 @@ module Client =
         ]
 
     let CalendarPage () =
+        disableTransitionsOnLoad()
         let username = Var.Create "Loading..."
         let viewMode = Var.Create "Monthly"
         let refDate = Var.Create System.DateTime.Today
@@ -1121,7 +1382,7 @@ module Client =
 
 
         div [attr.``class`` "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0"] [
-            Sidebar "Calendar" username currentSeason isSidebarOpen.View (fun () -> isSidebarOpen.Value <- false)
+            Sidebar "Calendar" username currentSeason isMenuCollapsed.View (fun () -> isMenuCollapsed.Value <- not isMenuCollapsed.Value)
             div [attr.``class`` "flex-1 p-10 overflow-y-auto w-full flex flex-col"] [
                 div [attr.``class`` "flex justify-between items-center mb-10"] [
                     div [] [
@@ -1138,7 +1399,7 @@ module Client =
                     
                     div [attr.``class`` "flex items-center space-x-6 relative"] [
                         Neo.Button [text "Today"] accent (fun () -> refDate.Value <- System.DateTime.Today)
-                        Neo.Select ["Weekly"; "Monthly"; "Lunar"; "Year"] viewMode id accent accentHover true
+                        Neo.Select ["Weekly"; "Monthly"; "Lunar"; "Year"] viewMode id "Select View" accent accentHover true
                         div [attr.``class`` "flex space-x-3"] [
                             Neo.IconButton (Doc.Verbatim """<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>""") accentHover (fun () -> step "prev")
                             Neo.IconButton (Doc.Verbatim """<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>""") accentHover (fun () -> step "next")
@@ -1163,7 +1424,7 @@ module Client =
                                         ]
                                         div [] [
                                             label [attr.``class`` "block text-sm font-bold text-gray-700 mb-2 pl-2"] [text "Category"]
-                                            Neo.Select ["Personal"; "Work"; "Important"; "Health"] newEventType id accent accentHover false
+                                            Neo.Select ["Personal"; "Work"; "Important"; "Health"] newEventType id "Select Category" accent accentHover false
                                         ]
                                         div [] [
                                             label [attr.``class`` "block text-sm font-bold text-gray-700 mb-2 pl-2"] [text "Description"]
@@ -1400,6 +1661,7 @@ module Client =
 
 
     let RecipesPage () =
+        disableTransitionsOnLoad()
         let username = Var.Create "Loading..."
         let season = View.Const (getSeason System.DateTime.Today)
         let recipes = Var.Create ([||] : RecipeEntry[])
@@ -1440,7 +1702,7 @@ module Client =
             } |> Async.StartImmediate
 
         div [attr.``class`` "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0"] [
-            Sidebar "Recipes" username season (View.Const false) (fun () -> ())
+            Sidebar "Recipes" username season isMenuCollapsed.View (fun () -> isMenuCollapsed.Value <- not isMenuCollapsed.Value)
             div [attr.``class`` "flex-1 p-10 overflow-y-auto w-full"] [
                 div [attr.``class`` "flex justify-between items-center mb-8"] [
                     h1 [attr.``class`` "text-4xl font-extrabold text-gray-800"] [text "My Recipes"]
@@ -1532,6 +1794,7 @@ module Client =
         ]
 
     let RecordsPage () =
+        disableTransitionsOnLoad()
         let username = Var.Create "Loading..."
         let season = View.Const (getSeason System.DateTime.Today)
         let records = Var.Create ([||] : DailyRecord[])
@@ -1568,7 +1831,7 @@ module Client =
             } |> Async.StartImmediate
 
         div [attr.``class`` "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0"] [
-            Sidebar "Records" username season (View.Const false) (fun () -> ())
+            Sidebar "Records" username season isMenuCollapsed.View (fun () -> isMenuCollapsed.Value <- not isMenuCollapsed.Value)
             div [attr.``class`` "flex-1 p-10 overflow-y-auto w-full"] [
                 h1 [attr.``class`` "text-4xl font-extrabold text-gray-800 mb-6"] [text "Health Records"]
                 
@@ -1580,7 +1843,7 @@ module Client =
                             label [attr.``class`` "block text-xs font-bold text-gray-700 mb-2 pl-2"] [text "Type"]
                             let accent = season |> View.Map (fun s -> getSeasonTheme s "text" "600")
                             let accentBg = season |> View.Map (fun s -> getSeasonTheme s "bg" "100")
-                            Neo.Select ["Blood Glucose"; "Weight"; "Blood Pressure"; "Heart Rate"] newType id accent accentBg false
+                            Neo.Select ["Blood Glucose"; "Weight"; "Blood Pressure"; "Heart Rate"] newType id "Select Type" accent accentBg false
                         ]
                         div [] [
                             label [attr.``class`` "block text-xs font-bold text-gray-700 mb-2 pl-2"] [text "Value"]
@@ -1629,6 +1892,7 @@ module Client =
             ]
         ]
     let ProductsPage () =
+        disableTransitionsOnLoad()
         let username = Var.Create "Loading..."
         let season = View.Const (getSeason System.DateTime.Today)
         let products = Var.Create ([||] : ProductItem[])
@@ -1669,7 +1933,7 @@ module Client =
             } |> Async.StartImmediate
 
         div [attr.``class`` "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0"] [
-            Sidebar "Products" username season (View.Const false) (fun () -> ())
+            Sidebar "Products" username season isMenuCollapsed.View (fun () -> isMenuCollapsed.Value <- not isMenuCollapsed.Value)
             div [attr.``class`` "flex-1 p-10 overflow-y-auto w-full"] [
                 div [attr.``class`` "flex justify-between items-center mb-8"] [
                     h1 [attr.``class`` "text-4xl font-extrabold text-gray-900"] [text "Product Inventory"]
@@ -1694,7 +1958,7 @@ module Client =
                                             label [attr.``class`` "block text-xs font-bold text-gray-700 mb-2 pl-2"] [text "Category"]
                                             let accent = season |> View.Map (fun s -> getSeasonTheme s "text" "600")
                                             let accentBg = season |> View.Map (fun s -> getSeasonTheme s "bg" "100")
-                                            Neo.Select ["Groceries"; "Meat"; "Dairy"; "Veggie"; "Treats"] newCategory id accent accentBg false
+                                            Neo.Select ["Groceries"; "Meat"; "Dairy"; "Veggie"; "Treats"] newCategory id "Select Category" accent accentBg false
                                         ]
                                         div [] [
                                             label [attr.``class`` "block text-xs font-bold text-gray-700 mb-2 pl-2"] [text "Unit"]
@@ -1754,6 +2018,95 @@ module Client =
                         ) |> View.Map Doc.Concat |> Doc.EmbedView
                     ]
                 )
+            ]
+        ]
+
+    let ProfilePage (username: string) =
+        let state = Var.Create (None : PublicProfile option)
+        let loading = Var.Create true
+        
+        async {
+            let! res = Server.GetPublicProfile username
+            state.Value <- res
+            loading.Value <- false
+        } |> Async.StartImmediate
+        
+        div [attr.``class`` "flex items-center justify-center min-h-screen bg-[#e0e5ec] p-6"] [
+            state.View |> View.Map (fun profile ->
+                match profile with
+                | Some prof ->
+                    GlassCard [
+                        div [attr.``class`` "flex flex-col items-center"] [
+                            div [attr.``class`` "w-32 h-32 rounded-full neo-flat mb-6 overflow-hidden flex items-center justify-center text-4xl font-black text-gray-300"] [
+                                match prof.AvatarUrl with
+                                | Some url -> img [attr.src url; attr.``class`` "w-full h-full object-cover"] []
+                                | None -> text (if prof.Username.Length > 0 then prof.Username.Substring(0,1).ToUpper() else "U")
+                            ]
+                            h2 [attr.``class`` "text-3xl font-black text-gray-800 mb-2"] [text (sprintf "@%s" prof.Username)]
+                            div [attr.``class`` "px-4 py-1 rounded-full neo-pressed text-[10px] font-bold uppercase tracking-widest text-emerald-600 mb-8"] [
+                                text (if prof.IsPublic then "Public Profile" else "Private View")
+                            ]
+                            
+                            div [attr.``class`` "w-full space-y-4 border-t border-gray-100 pt-8"] [
+                                if prof.IsOwner then
+                                    Neo.Button [text "Edit My Profile"] (View.Const "") (fun () -> JS.Window.Location.Href <- "/settings")
+                                else
+                                    p [attr.``class`` "text-center text-gray-500 italic text-sm font-medium"] [text "Detailed user stats are private."]
+                            ]
+                        ]
+                    ]
+                | None ->
+                    if loading.Value then
+                        div [attr.``class`` "text-gray-400 font-bold animate-pulse text-xl"] [text (sprintf "Searching for @%s..." username)]
+                    else
+                        div [attr.``class`` "text-center neo-flat p-12 rounded-3xl"] [
+                            span [attr.``class`` "text-6xl mb-6 block grayscale opacity-40"] [text "🔍"]
+                            h2 [attr.``class`` "text-2xl font-bold text-gray-800 mb-2"] [text "User Not Found"]
+                            p [attr.``class`` "text-gray-500"] [text (sprintf "The profile for @%s does not exist or has been removed." username)]
+                            div [attr.``class`` "mt-8"] [
+                                Neo.Button [text "Return Home"] (View.Const "") (fun () -> JS.Window.Location.Href <- "/")
+                            ]
+                        ]
+            ) |> Doc.EmbedView
+        ]
+
+    let VerifyEmailChange (token: string) =
+        let status = Var.Create "Verifying your new email address..."
+        let isError = Var.Create false
+        
+        async {
+            let! res = Server.VerifyEmailChange token
+            match res with
+            | AuthResult.Success _ ->
+                status.Value <- "Email verified successfully! Redirecting..."
+                isError.Value <- false
+                do! Async.Sleep 2000
+                JS.Window.Location.Href <- "/settings"
+            | AuthResult.Error e ->
+                status.Value <- e
+                isError.Value <- true
+            | _ -> ()
+        } |> Async.StartImmediate
+        
+        div [attr.``class`` "flex items-center justify-center min-h-screen bg-[#e0e5ec] p-6"] [
+            GlassCard [
+                div [attr.``class`` "text-center"] [
+                    status.View |> View.Map (fun s ->
+                        div [attr.``class`` "flex flex-col items-center"] [
+                            div [attr.``class`` "w-16 h-16 rounded-full neo-pressed flex items-center justify-center mb-6"] [
+                                if isError.Value then
+                                    Doc.Verbatim """<svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>"""
+                                else
+                                    Doc.Verbatim """<svg class="w-8 h-8 text-emerald-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>"""
+                            ]
+                            h2 [attr.``class`` ("text-xl font-bold " + (if isError.Value then "text-red-600" else "text-gray-800"))] [text s]
+                            if isError.Value then
+                                div [attr.``class`` "mt-8"] [
+                                    Neo.Button [text "Back to Home"] (View.Const "") (fun () -> JS.Window.Location.Href <- "/")
+                                ]
+                        ]
+                    ) |> Doc.EmbedView
+                ]
             ]
         ]
 
