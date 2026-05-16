@@ -1,5 +1,4 @@
 import Doc from "../WebSharper.UI/WebSharper.UI.Doc"
-import { SettingsPage } from "./WebSharperApp.SettingsPage"
 import Var from "../WebSharper.UI/WebSharper.UI.Var`1"
 import { View_T } from "../WebSharper.UI/WebSharper.UI.View`1"
 import IEnumerable from "../WebSharper.StdLib/System.Collections.Generic.IEnumerable`1"
@@ -13,7 +12,7 @@ export function RecordsPage():Doc
 export function RecipesPage():Doc
 export function CalendarPage():Doc
 export function PlannerPage():Doc
-export function SettingsPanel(page:SettingsPage):Doc
+export function SettingsPanel():Doc
 export function Dashboard():Doc
 export function Sidebar(active:string, username:Var<string>, season:View_T<string>, isCollapsed:View_T<boolean>, onToggle:(() => void)):Doc
 export function NavBarAuthWidget():Doc
@@ -38,4 +37,6 @@ export function getRecentNewMoon(date:number):number
 export function getMoonInfo(date:number):[string, string, string]
 export function RenderToast():Doc
 export function showToast(content:string, t:ToastType):void
+export function disableTransitionsOnLoad():void
+export function isMenuCollapsed():Var<boolean>
 export function currentToast():Var<FSharpOption<ToastMsg>>

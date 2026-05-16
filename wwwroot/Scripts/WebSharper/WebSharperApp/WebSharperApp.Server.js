@@ -1,7 +1,16 @@
 import { Bind, Return } from "../WebSharper.StdLib/WebSharper.Concurrency.js"
 import AjaxRemotingProvider from "../WebSharper.StdLib/WebSharper.Remoting.AjaxRemotingProvider.js"
-import { DecodeJson_AuthResult, EncodeJson_GlobalSettings, DecodeJson_FSharpOption_1, DecodeJson_GlobalSettings, EncodeJson_MealPlanItem, DecodeJson_MealPlanItem, EncodeJson_DailyRecord, DecodeJson_DailyRecord, EncodeJson_CalendarEvent, DecodeJson_CalendarEvent } from "./$Generated.js"
+import { DecodeJson_AuthResult, DecodeJson_FSharpResult_2, EncodeJson_GlobalSettings, DecodeJson_FSharpOption_1, DecodeJson_GlobalSettings, EncodeJson_MealPlanItem, DecodeJson_MealPlanItem, EncodeJson_DailyRecord, DecodeJson_DailyRecord, EncodeJson_CalendarEvent, DecodeJson_CalendarEvent } from "./$Generated.js"
 import { EncodeDateTime, DecodeArray } from "../WebSharper.Web/WebSharper.ClientSideJson.Provider.js"
+export function ChangeEmailDirect(newEmail){
+  return Bind((new AjaxRemotingProvider()).Async("Server/ChangeEmailDirect", [newEmail]), (o) => Return((DecodeJson_AuthResult())(o)));
+}
+export function ToggleProfilePublic(isPublic){
+  return Bind((new AjaxRemotingProvider()).Async("Server/ToggleProfilePublic", [isPublic]), (o) => Return((DecodeJson_AuthResult())(o)));
+}
+export function UploadAvatarBase64(dataUrl){
+  return Bind((new AjaxRemotingProvider()).Async("Server/UploadAvatarBase64", [dataUrl]), (o) => Return((DecodeJson_FSharpResult_2())(o)));
+}
 export function SaveHealthSettings(h){
   return Bind((new AjaxRemotingProvider()).Async("Server/SaveHealthSettings", [h]), (o) => Return((DecodeJson_AuthResult())(o)));
 }

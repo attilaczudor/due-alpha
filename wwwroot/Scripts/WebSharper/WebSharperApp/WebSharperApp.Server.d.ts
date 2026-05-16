@@ -1,6 +1,7 @@
-import UserHealthSettings from "./WebSharperApp.UserHealthSettings"
 import { AuthResult } from "./WebSharperApp.AuthResult"
 import AsyncBody from "../WebSharper.StdLib/WebSharper.Concurrency.AsyncBody`1"
+import { FSharpResult } from "../WebSharper.StdLib/Microsoft.FSharp.Core.FSharpResult`2"
+import UserHealthSettings from "./WebSharperApp.UserHealthSettings"
 import GlobalSettings from "./WebSharperApp.GlobalSettings"
 import PublicProfile from "./WebSharperApp.PublicProfile"
 import { FSharpOption } from "../WebSharper.StdLib/Microsoft.FSharp.Core.FSharpOption`1"
@@ -9,6 +10,9 @@ import RecipeEntry from "./WebSharperApp.RecipeEntry"
 import ProductItem from "./WebSharperApp.ProductItem"
 import DailyRecord from "./WebSharperApp.DailyRecord"
 import CalendarEvent from "./WebSharperApp.CalendarEvent"
+export function ChangeEmailDirect(newEmail:string):((a:AsyncBody<AuthResult>) => void)
+export function ToggleProfilePublic(isPublic:boolean):((a:AsyncBody<AuthResult>) => void)
+export function UploadAvatarBase64(dataUrl:string):((a:AsyncBody<FSharpResult<string, string>>) => void)
 export function SaveHealthSettings(h:UserHealthSettings):((a:AsyncBody<AuthResult>) => void)
 export function GetHealthSettings():((a:AsyncBody<UserHealthSettings>) => void)
 export function ChangePassword(newPassword:string):((a:AsyncBody<AuthResult>) => void)

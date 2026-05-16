@@ -776,7 +776,7 @@ module Client =
         let usernameStatus = Var.Create (None : bool option)
         let usernameMessage = Var.Create ""
         let userSettings = Var.Create { Username = ""; Email = ""; PendingEmail = None; CalendarStartDay = "Monday"; AvatarUrl = None; IsProfilePublic = true }
-        let healthSettings = Var.Create { Sex = "Male"; BloodType = ""; JobType = ""; ExerciseFrequency = ""; ExerciseTypes = ""; HeightCm = 175.0; WeightKg = 70.0; BirthYear = 1990; BirthMonth = 1; BirthDay = 1 }
+        let healthSettings = Var.Create { Sex = "Male"; BloodType = ""; JobType = ""; ExerciseFrequency = ""; ExerciseTypes = ""; HeightCm = 175.0; WeightKg = 70.0; BirthYear = 1990; BirthMonth = 1; BirthDay = 1; MealFrequency = 3; DietType = ""; Allergies = ""; OtherAllergies = "" }
         
         let username = Var.Create "Loading..."
         let newUsername = Var.Create ""
@@ -851,9 +851,25 @@ module Client =
                 | _ -> ()
             } |> Async.StartImmediate
 
+        let saveHealth () =
+            async {
+                let! res = Server.SaveHealthSettings healthSettings.Value
+                match res with
+                | AuthResult.Success _ -> showToast "Health profile saved!" Success
+                | AuthResult.Error e -> showToast e Error
+                | _ -> ()
+            } |> Async.StartImmediate
+
+        let saveButton textContent =
+            button [
+                attr.``class`` "w-full py-4 mt-6 rounded-2xl font-bold text-gray-700 transition-all duration-300 neo-level-1 hover:neo-level-2 active:neo-pressed active:translate-y-px"
+                on.click (fun _ _ -> saveHealth())
+            ] [text textContent]
+
         let healthTab () =
-            div [attr.``class`` "max-w-md w-full"] [
-                div [attr.``class`` "neo-flat p-8 rounded-3xl mb-8"] [
+            div [attr.``class`` "flex flex-col lg:flex-row gap-8 w-full max-w-7xl"] [
+                // Box 1: Health Information
+                div [attr.``class`` "flex-1 neo-flat p-8 rounded-3xl flex flex-col"] [
                     h3 [attr.``class`` "text-lg font-bold text-gray-800 mb-8 border-b border-gray-100 pb-4"] [text "Health Information"]
                     
                     div [attr.``class`` "space-y-8"] [
@@ -861,7 +877,7 @@ module Client =
                         div [] [
                             label [attr.``class`` "block text-gray-800 text-sm font-bold mb-4 pl-2"] [text "Biological Sex"]
                             div [attr.``class`` "flex space-x-4"] [
-                                for sex in ["Male"; "Female"; "Other"] do
+                                for sex in ["Male"; "Female"] do
                                     button [
                                         attr.classDyn (healthSettings.View |> View.Map (fun hs -> 
                                             let baseClass = "flex-1 py-4 rounded-2xl font-bold transition-all duration-300 "
@@ -890,45 +906,118 @@ module Client =
 
                         div [] [
                             label [attr.``class`` "block text-gray-800 text-sm font-bold mb-3 pl-2"] [text "Exercise Frequency"]
-                            Neo.Select ["Never"; "1-2 times/week"; "3-4 times/week"; "Daily"; "Athletic"] 
+                            Neo.Select ["Never"; "1-2 times/week"; "3-4 times/week"; "Daily"] 
                                 (healthSettings.Lens (fun hs -> hs.ExerciseFrequency) (fun hs v -> { hs with ExerciseFrequency = v })) 
                                 id "Select Exercise Frequency" accentText accentBg false
                         ]
 
                         // Multiselect Exercise Types
+                        healthSettings.View |> View.Map (fun hs ->
+                            if hs.ExerciseFrequency <> "Never" then
+                                div [] [
+                                    label [attr.``class`` "block text-gray-800 text-sm font-bold mb-4 pl-2"] [text "Type of Exercise"]
+                                    div [attr.``class`` "flex flex-wrap gap-3"] [
+                                        for exercise in ["Running"; "Swimming"; "Cycling"; "Gym"; "Yoga"; "Sports"; "Hiking"; "Pilates"] do
+                                            button [
+                                                let baseClass = "py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 "
+                                                let selected = hs.ExerciseTypes.Split([|','|], System.StringSplitOptions.RemoveEmptyEntries)
+                                                attr.``class`` (if selected |> Array.contains exercise then baseClass + "neo-pressed text-emerald-600" else baseClass + "neo-flat text-gray-600 hover:text-emerald-400")
+                                                on.click (fun _ _ -> 
+                                                    let current = healthSettings.Value.ExerciseTypes.Split([|','|], System.StringSplitOptions.RemoveEmptyEntries)
+                                                    let next = 
+                                                        if current |> Array.contains exercise then current |> Array.filter (fun e -> e <> exercise)
+                                                        else Array.append current [|exercise|]
+                                                    healthSettings.Value <- { healthSettings.Value with ExerciseTypes = String.concat "," next }
+                                                )
+                                            ] [text exercise]
+                                    ]
+                                ]
+                            else Doc.Empty
+                        ) |> Doc.EmbedView
+                    ]
+                    div [attr.``class`` "mt-auto pt-6"] [
+                        saveButton "Save"
+                    ]
+                ]
+                
+                // Box 2: Meal Preferences
+                div [attr.``class`` "flex-1 neo-flat p-8 rounded-3xl flex flex-col"] [
+                    h3 [attr.``class`` "text-lg font-bold text-gray-800 mb-8 border-b border-gray-100 pb-4"] [text "Meal Preferences"]
+                    
+                    div [attr.``class`` "space-y-8"] [
                         div [] [
-                            label [attr.``class`` "block text-gray-800 text-sm font-bold mb-4 pl-2"] [text "Type of Exercise"]
-                            div [attr.``class`` "grid grid-cols-2 gap-3"] [
-                                for exercise in ["Running"; "Swimming"; "Cycling"; "Gym"; "Yoga"; "Sports"; "Hiking"; "Pilates"] do
+                            label [attr.``class`` "block text-gray-800 text-sm font-bold mb-3 pl-2"] [text "Meals per day"]
+                            Doc.InputType.Text [
+                                WebSharper.UI.Attr.Create "type" "number"
+                                attr.``class`` "neo-pressed rounded-xl w-full py-3 px-5 text-gray-800 focus:outline-none transition mb-2"
+                                attr.min "1"
+                                attr.max "10"
+                            ] (healthSettings.Lens 
+                                (fun hs -> string hs.MealFrequency) 
+                                (fun hs v -> 
+                                    match System.Int32.TryParse(v) with
+                                    | true, n -> { hs with MealFrequency = max 1 (min 10 n) }
+                                    | _ -> hs
+                                ))
+                            p [attr.``class`` "text-xs text-gray-500 pl-2"] [text "How many times do you want to eat per day (1-10)?"]
+                        ]
+                        
+                        div [] [
+                            label [attr.``class`` "block text-gray-800 text-sm font-bold mb-3 pl-2"] [text "Diet Preference"]
+                            Neo.Select ["None"; "Keto"; "Vegan"; "Vegetarian"; "Paleo"; "Mediterranean"] 
+                                (healthSettings.Lens (fun hs -> hs.DietType) (fun hs v -> { hs with DietType = v })) 
+                                id "Select Diet" accentText accentBg false
+                        ]
+                    ]
+                    div [attr.``class`` "mt-auto pt-6"] [
+                        saveButton "Save"
+                    ]
+                ]
+
+                // Box 3: Allergies
+                div [attr.``class`` "flex-1 neo-flat p-8 rounded-3xl flex flex-col"] [
+                    h3 [attr.``class`` "text-lg font-bold text-gray-800 mb-8 border-b border-gray-100 pb-4"] [text "Allergies"]
+                    
+                    div [attr.``class`` "space-y-8"] [
+                        div [] [
+                            label [attr.``class`` "block text-gray-800 text-sm font-bold mb-4 pl-2"] [text "Common Allergies"]
+                            div [attr.``class`` "flex flex-wrap gap-3"] [
+                                for allergy in ["None"; "Gluten"; "Dairy"; "Nuts"; "Other"] do
                                     button [
                                         attr.classDyn (healthSettings.View |> View.Map (fun hs -> 
-                                            let baseClass = "py-3 px-4 rounded-xl font-bold text-xs transition-all duration-200 "
-                                            let selected = hs.ExerciseTypes.Split([|','|], System.StringSplitOptions.RemoveEmptyEntries)
-                                            if selected |> Array.contains exercise then baseClass + "neo-pressed text-emerald-600"
-                                            else baseClass + "neo-flat text-gray-600 hover:text-emerald-400"
+                                            let baseClass = "py-3 px-4 rounded-xl font-bold text-sm transition-all duration-300 "
+                                            let selected = hs.Allergies.Split([|','|], System.StringSplitOptions.RemoveEmptyEntries)
+                                            if selected |> Array.contains allergy then baseClass + "neo-pressed text-emerald-600"
+                                            else baseClass + "neo-flat text-gray-600 hover:text-gray-900"
                                         ))
                                         on.click (fun _ _ -> 
-                                            let current = healthSettings.Value.ExerciseTypes.Split([|','|], System.StringSplitOptions.RemoveEmptyEntries)
+                                            let current = healthSettings.Value.Allergies.Split([|','|], System.StringSplitOptions.RemoveEmptyEntries)
                                             let next = 
-                                                if current |> Array.contains exercise then current |> Array.filter (fun e -> e <> exercise)
-                                                else Array.append current [|exercise|]
-                                            healthSettings.Value <- { healthSettings.Value with ExerciseTypes = String.concat "," next }
+                                                if allergy = "None" then [|"None"|]
+                                                else
+                                                    let withoutNone = current |> Array.filter (fun a -> a <> "None")
+                                                    if withoutNone |> Array.contains allergy then 
+                                                        withoutNone |> Array.filter (fun a -> a <> allergy)
+                                                    else 
+                                                        Array.append withoutNone [|allergy|]
+                                            healthSettings.Value <- { healthSettings.Value with Allergies = String.concat "," next }
                                         )
-                                    ] [text exercise]
+                                    ] [text allergy]
+                                
+                                healthSettings.View |> View.Map (fun hs ->
+                                    let selected = hs.Allergies.Split([|','|], System.StringSplitOptions.RemoveEmptyEntries)
+                                    if selected |> Array.contains "Other" then
+                                        Doc.InputType.Text [
+                                            attr.``class`` "neo-pressed rounded-xl py-3 px-5 text-sm font-bold text-gray-800 focus:outline-none transition min-w-[120px]"
+                                            attr.placeholder "Specify..."
+                                        ] (healthSettings.Lens (fun h -> h.OtherAllergies) (fun h v -> { h with OtherAllergies = v }))
+                                    else Doc.Empty
+                                ) |> Doc.EmbedView
                             ]
                         ]
                     ]
-
-                    div [attr.``class`` "mt-10"] [
-                        Neo.Button [text "Save Health Profile"] accentBg (fun () -> 
-                            async {
-                                let! res = Server.SaveHealthSettings healthSettings.Value
-                                match res with
-                                | AuthResult.Success _ -> showToast "Health profile saved!" Success
-                                | AuthResult.Error e -> showToast e Error
-                                | _ -> ()
-                            } |> Async.StartImmediate
-                        )
+                    div [attr.``class`` "mt-auto pt-6"] [
+                        saveButton "Save"
                     ]
                 ]
             ]
@@ -1190,6 +1279,15 @@ module Client =
         let selectedMealType = Var.Create "Lunch"
         let selectedRecipeId = Var.Create ("-1", "Custom Meal")
         let customMealTitle = Var.Create ""
+        let mealFrequency = Var.Create 3
+        
+        let generateSlots freq =
+            if freq = 1 then ["Meal 1"]
+            elif freq = 2 then ["Breakfast"; "Dinner"]
+            elif freq = 3 then ["Breakfast"; "Lunch"; "Dinner"]
+            elif freq = 4 then ["Breakfast"; "Lunch"; "Dinner"; "Snack"]
+            elif freq = 5 then ["Breakfast"; "Snack 1"; "Lunch"; "Snack 2"; "Dinner"]
+            else [1..freq] |> List.map (fun i -> sprintf "Meal %d" i)
         
         let loadPlannerData () =
             async {
@@ -1200,6 +1298,8 @@ module Client =
                 mealPlans.Value <- p
                 let! r = Server.GetRecipes()
                 recipesList.Value <- r
+                let! h = Server.GetHealthSettings()
+                mealFrequency.Value <- h.MealFrequency
             } |> Async.StartImmediate
 
         async {
@@ -1258,7 +1358,9 @@ module Client =
                                 div [attr.``class`` "space-y-6"] [
                                     div [] [
                                         label [attr.``class`` "block text-xs font-bold text-gray-700 mb-2 pl-2"] [text "Meal Slot"]
-                                        Neo.Select ["Breakfast"; "Lunch"; "Dinner"; "Snack"] selectedMealType id "Select Slot" accent accentHover false
+                                        mealFrequency.View |> View.Map (fun freq ->
+                                            Neo.Select (generateSlots freq) selectedMealType id "Select Slot" accent accentHover false
+                                        ) |> Doc.EmbedView
                                     ]
                                     div [] [
                                         label [attr.``class`` "block text-xs font-bold text-gray-700 mb-2 pl-2"] [text "Select Recipe"]
@@ -1296,32 +1398,35 @@ module Client =
                                     renderDate dayDate true None
                                 ]
                                 
-                                div [attr.``class`` "flex-1 space-y-4"] [
-                                    ["Breakfast"; "Lunch"; "Dinner"] |> List.map (fun mType ->
-                                        div [
-                                            attr.``class`` "neo-nav-item p-4 rounded-2xl min-h-[100px] flex flex-col group cursor-pointer active:scale-95 transition"
-                                            on.click (fun _ _ -> 
-                                                selectedDay.Value <- dayDate
-                                                selectedMealType.Value <- mType
-                                                showPlanModal.Value <- true
-                                            )
-                                        ] [
-                                            span [attr.``class`` "text-[10px] font-bold text-gray-700 uppercase tracking-tighter mb-2"] [text mType]
-                                            mealPlans.View |> View.Map (fun plans ->
-                                                plans |> Array.tryFind (fun p -> p.PlanDate.Date = dayDate.Date && p.MealType = mType)
-                                                |> function
-                                                | Some p -> 
-                                                    div [attr.``class`` "flex-1"] [
-                                                        span [attr.``class`` "text-sm font-bold text-gray-700"] [text p.Title]
-                                                    ]
-                                                | None -> 
-                                                    div [attr.``class`` "flex-1 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"] [
-                                                        span [attr.``class`` "text-xs text-gray-600 italic"] [text "+ Plan"]
-                                                    ]
-                                            ) |> Doc.EmbedView
-                                        ]
-                                    ) |> Doc.Concat
-                                ]
+                                mealFrequency.View |> View.Map (fun freq ->
+                                    let slots = generateSlots freq
+                                    div [attr.``class`` "flex-1 space-y-4"] [
+                                        slots |> List.map (fun mType ->
+                                            div [
+                                                attr.``class`` "neo-nav-item p-4 rounded-2xl min-h-[100px] flex flex-col group cursor-pointer active:scale-95 transition"
+                                                on.click (fun _ _ -> 
+                                                    selectedDay.Value <- dayDate
+                                                    selectedMealType.Value <- mType
+                                                    showPlanModal.Value <- true
+                                                )
+                                            ] [
+                                                span [attr.``class`` "text-[10px] font-bold text-gray-700 uppercase tracking-tighter mb-2"] [text mType]
+                                                mealPlans.View |> View.Map (fun plans ->
+                                                    plans |> Array.tryFind (fun p -> p.PlanDate.Date = dayDate.Date && p.MealType = mType)
+                                                    |> function
+                                                    | Some p -> 
+                                                        div [attr.``class`` "flex-1"] [
+                                                            span [attr.``class`` "text-sm font-bold text-gray-700"] [text p.Title]
+                                                        ]
+                                                    | None -> 
+                                                        div [attr.``class`` "flex-1 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"] [
+                                                            span [attr.``class`` "text-xs text-gray-600 italic"] [text "+ Plan"]
+                                                        ]
+                                                ) |> Doc.EmbedView
+                                            ]
+                                        ) |> Doc.Concat
+                                    ]
+                                ) |> Doc.EmbedView
                             ]
                         ) |> Doc.EmbedView
                     )

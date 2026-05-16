@@ -214,6 +214,13 @@ module Database =
                 );
             """) |> ignore
 
+            // Migrations for new health settings columns
+            try db.Execute("ALTER TABLE UserSettingsHealth ADD COLUMN MealFrequency INTEGER NOT NULL DEFAULT 3;") |> ignore with _ -> ()
+            try db.Execute("ALTER TABLE UserSettingsHealth ADD COLUMN DietType TEXT;") |> ignore with _ -> ()
+            try db.Execute("ALTER TABLE UserSettingsHealth ADD COLUMN Allergies TEXT;") |> ignore with _ -> ()
+            try db.Execute("ALTER TABLE UserSettingsHealth ADD COLUMN OtherAllergies TEXT;") |> ignore with _ -> ()
+
+
             // Migration: rename/copy old UserHealthSettings → UserSettingsHealth
             let hasOldHealthTable =
                 try db.QuerySingleOrDefault<int>(

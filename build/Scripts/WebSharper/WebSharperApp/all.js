@@ -124,6 +124,8 @@ export function PlannerPage(){
   const selectedMealType=_c.Create_1("Lunch");
   const selectedRecipeId=_c.Create_1(["-1", "Custom Meal"]);
   const customMealTitle=_c.Create_1("");
+  const mealFrequency=_c.Create_1(3);
+  const generateSlots=(freq) => freq===1?ofArray(["Meal 1"]):freq===2?ofArray(["Breakfast", "Dinner"]):freq===3?ofArray(["Breakfast", "Lunch", "Dinner"]):freq===4?ofArray(["Breakfast", "Lunch", "Dinner", "Snack"]):freq===5?ofArray(["Breakfast", "Snack 1", "Lunch", "Snack 2", "Dinner"]):map_1((i) =>(((_1) =>(_2) => _1("Meal "+String(_2)))((x) => x))(i), ofSeq(range(1, freq)));
   const loadPlannerData=() => {
     StartImmediate(Delay(() => {
       const current=refDate.Get();
@@ -132,7 +134,10 @@ export function PlannerPage(){
         mealPlans.Set(a);
         return Bind_1(GetRecipes(), (a_1) => {
           recipesList.Set(a_1);
-          return Zero();
+          return Bind_1(GetHealthSettings(), (a_2) => {
+            mealFrequency.Set(a_2.MealFrequency);
+            return Zero();
+          });
         });
       });
     }), null);
@@ -150,7 +155,7 @@ export function PlannerPage(){
   }), IconButton(Doc.Verbatim("<svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" stroke-width=\"2.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M9 5l7 7-7 7\"></path></svg>"), accentHover, () => {
     refDate.Set(refDate.Get()+7*864E5);
     loadPlannerData();
-  })])]), Doc.EmbedView(Map((show) => show?Doc.Element("div", [Attr.Create("class", "fixed inset-0 z-[200] flex items-center justify-center p-6")], [Doc.Element("div", [Attr.Create("class", "absolute inset-0 bg-gray-900 bg-opacity-30 backdrop-blur-sm"), Handler("click", () =>() => showPlanModal.Set(false))], []), Doc.Element("div", [Attr.Create("class", "relative w-full max-w-md neo-flat p-8 rounded-3xl")], [Doc.Element("h2", [Attr.Create("class", "text-2xl font-bold mb-6 text-gray-900")], [Doc.TextNode((((_1) =>(_2) => _1("Plan for "+toSafe(_2)))((x) => x))(DateFormatter(selectedDay.Get(), "MMM dd")))]), Doc.Element("div", [Attr.Create("class", "space-y-6")], [Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-xs font-bold text-gray-700 mb-2 pl-2")], [Doc.TextNode("Meal Slot")]), Select(ofArray(["Breakfast", "Lunch", "Dinner", "Snack"]), selectedMealType, (x) => x, "Select Slot", accent, accentHover, false)]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-xs font-bold text-gray-700 mb-2 pl-2")], [Doc.TextNode("Select Recipe")]), Select(FSharpList.Cons(["-1", "Custom Meal"], map_1((r) =>[String(r.Id), r.Name], ofArray(recipesList.Get()))), selectedRecipeId, (t) => t[1], "Select Recipe", accent, accentHover, false)]), Doc.EmbedView(Map((_1) => _1[0]=="-1"?Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-xs font-bold text-gray-700 mb-2 pl-2")], [Doc.TextNode("Meal Title")]), Doc.Input([Attr.Create("class", "neo-pressed w-full rounded-xl py-4 px-5 text-gray-800 focus:outline-none")], customMealTitle)]):Doc.Empty, selectedRecipeId.View)), Doc.Element("div", [Attr.Create("class", "flex space-x-4 mt-8")], [Doc.Element("button", [Attr.Create("class", "flex-1 neo-flat py-4 rounded-xl font-bold text-gray-600 active:scale-95 transition"), Handler("click", () =>() => showPlanModal.Set(false))], [Doc.TextNode("Cancel")]), Button([Doc.TextNode("Assign Meal")], Map((a) =>"flex-1 "+a, accent), () => {
+  })])]), Doc.EmbedView(Map((show) => show?Doc.Element("div", [Attr.Create("class", "fixed inset-0 z-[200] flex items-center justify-center p-6")], [Doc.Element("div", [Attr.Create("class", "absolute inset-0 bg-gray-900 bg-opacity-30 backdrop-blur-sm"), Handler("click", () =>() => showPlanModal.Set(false))], []), Doc.Element("div", [Attr.Create("class", "relative w-full max-w-md neo-flat p-8 rounded-3xl")], [Doc.Element("h2", [Attr.Create("class", "text-2xl font-bold mb-6 text-gray-900")], [Doc.TextNode((((_1) =>(_2) => _1("Plan for "+toSafe(_2)))((x) => x))(DateFormatter(selectedDay.Get(), "MMM dd")))]), Doc.Element("div", [Attr.Create("class", "space-y-6")], [Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-xs font-bold text-gray-700 mb-2 pl-2")], [Doc.TextNode("Meal Slot")]), Doc.EmbedView(Map((freq) => Select(generateSlots(freq), selectedMealType, (x) => x, "Select Slot", accent, accentHover, false), mealFrequency.View))]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-xs font-bold text-gray-700 mb-2 pl-2")], [Doc.TextNode("Select Recipe")]), Select(FSharpList.Cons(["-1", "Custom Meal"], map_1((r) =>[String(r.Id), r.Name], ofArray(recipesList.Get()))), selectedRecipeId, (t) => t[1], "Select Recipe", accent, accentHover, false)]), Doc.EmbedView(Map((_1) => _1[0]=="-1"?Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-xs font-bold text-gray-700 mb-2 pl-2")], [Doc.TextNode("Meal Title")]), Doc.Input([Attr.Create("class", "neo-pressed w-full rounded-xl py-4 px-5 text-gray-800 focus:outline-none")], customMealTitle)]):Doc.Empty, selectedRecipeId.View)), Doc.Element("div", [Attr.Create("class", "flex space-x-4 mt-8")], [Doc.Element("button", [Attr.Create("class", "flex-1 neo-flat py-4 rounded-xl font-bold text-gray-600 active:scale-95 transition"), Handler("click", () =>() => showPlanModal.Set(false))], [Doc.TextNode("Cancel")]), Button([Doc.TextNode("Assign Meal")], Map((a) =>"flex-1 "+a, accent), () => {
     StartImmediate(Delay(() => {
       let title;
       const ridStr=(selectedRecipeId.Get())[0];
@@ -160,22 +165,25 @@ export function PlannerPage(){
         title=m==null?customMealTitle.Get():m.$0.Name;
       }
       else title=customMealTitle.Get();
-      return Bind_1(AddMealPlan(New_2(0, selectedDay.Get(), selectedMealType.Get(), rid, title, "")), (a) => a.$==0?(showPlanModal.Set(false),loadPlannerData(),Zero()):a.$==3?(alert(a.$0),Zero()):Zero());
+      return Bind_1(AddMealPlan(New_3(0, selectedDay.Get(), selectedMealType.Get(), rid, title, "")), (a) => a.$==0?(showPlanModal.Set(false),loadPlannerData(),Zero()):a.$==3?(alert(a.$0),Zero()):Zero());
     }), null);
   })])])])]):Doc.Empty, showPlanModal.View)), Doc.Element("div", [Attr.Create("class", "grid grid-cols-1 md:grid-cols-7 gap-6")], map_1((i) => Doc.EmbedView(Map((start) => {
     const dayDate=start+i*864E5;
-    return Doc.Element("div", [Attr.Create("class", "flex flex-col space-y-4")], [Doc.Element("div", [Attr.Create("class", "w-full")], [renderDate(dayDate, true, null)]), Doc.Element("div", [Attr.Create("class", "flex-1 space-y-4")], [Doc.Concat(map_1((mType) => Doc.Element("div", [Attr.Create("class", "neo-nav-item p-4 rounded-2xl min-h-[100px] flex flex-col group cursor-pointer active:scale-95 transition"), Handler("click", () =>() => {
-      selectedDay.Set(dayDate);
-      selectedMealType.Set(mType);
-      return showPlanModal.Set(true);
-    })], [Doc.Element("span", [Attr.Create("class", "text-[10px] font-bold text-gray-700 uppercase tracking-tighter mb-2")], [Doc.TextNode(mType)]), Doc.EmbedView(Map((plans) => {
-      const a=tryFind((p_1) => DatePortion(p_1.PlanDate)==DatePortion(dayDate)&&p_1.MealType==mType, plans);
-      if(a==null)return Doc.Element("div", [Attr.Create("class", "flex-1 flex items-center justify-center opacity-0 group-hover:opacity-100 transition")], [Doc.Element("span", [Attr.Create("class", "text-xs text-gray-600 italic")], [Doc.TextNode("+ Plan")])]);
-      else {
-        const p=a.$0;
-        return Doc.Element("div", [Attr.Create("class", "flex-1")], [Doc.Element("span", [Attr.Create("class", "text-sm font-bold text-gray-700")], [Doc.TextNode(p.Title)])]);
-      }
-    }, mealPlans.View))]), ofArray(["Breakfast", "Lunch", "Dinner"])))])]);
+    return Doc.Element("div", [Attr.Create("class", "flex flex-col space-y-4")], [Doc.Element("div", [Attr.Create("class", "w-full")], [renderDate(dayDate, true, null)]), Doc.EmbedView(Map((freq) => {
+      const slots=generateSlots(freq);
+      return Doc.Element("div", [Attr.Create("class", "flex-1 space-y-4")], [Doc.Concat(map_1((mType) => Doc.Element("div", [Attr.Create("class", "neo-nav-item p-4 rounded-2xl min-h-[100px] flex flex-col group cursor-pointer active:scale-95 transition"), Handler("click", () =>() => {
+        selectedDay.Set(dayDate);
+        selectedMealType.Set(mType);
+        return showPlanModal.Set(true);
+      })], [Doc.Element("span", [Attr.Create("class", "text-[10px] font-bold text-gray-700 uppercase tracking-tighter mb-2")], [Doc.TextNode(mType)]), Doc.EmbedView(Map((plans) => {
+        const a=tryFind((p_1) => DatePortion(p_1.PlanDate)==DatePortion(dayDate)&&p_1.MealType==mType, plans);
+        if(a==null)return Doc.Element("div", [Attr.Create("class", "flex-1 flex items-center justify-center opacity-0 group-hover:opacity-100 transition")], [Doc.Element("span", [Attr.Create("class", "text-xs text-gray-600 italic")], [Doc.TextNode("+ Plan")])]);
+        else {
+          const p=a.$0;
+          return Doc.Element("div", [Attr.Create("class", "flex-1")], [Doc.Element("span", [Attr.Create("class", "text-sm font-bold text-gray-700")], [Doc.TextNode(p.Title)])]);
+        }
+      }, mealPlans.View))]), slots))]);
+    }, mealFrequency.View))]);
   }, startOfWeek)), ofSeq(range(0, 6))))])]);
 }
 export function CalendarPage(){
@@ -233,7 +241,7 @@ export function CalendarPage(){
     StartImmediate(Delay(() => {
       const m=newEventType.Get();
       const icon=m=="Work"?"\ud83d\udcbc":m=="Health"?"\ud83c\udfe5":m=="Important"?"\u26a0\ufe0f":"\ud83d\udcc5";
-      return Bind_1(AddCalendarEvent(New_4(0, newEventTitle.Get(), newEventDesc.Get(), refDate.Get(), newEventType.Get(), icon)), (a) => a.$==0?(showAddModal.Set(false),newEventTitle.Set(""),newEventDesc.Set(""),loadEvents(),Zero()):a.$==3?(alert(a.$0),Zero()):Zero());
+      return Bind_1(AddCalendarEvent(New_5(0, newEventTitle.Get(), newEventDesc.Get(), refDate.Get(), newEventType.Get(), icon)), (a) => a.$==0?(showAddModal.Set(false),newEventTitle.Set(""),newEventDesc.Set(""),loadEvents(),Zero()):a.$==3?(alert(a.$0),Zero()):Zero());
     }), null);
   })])])])]):Doc.Empty, showAddModal.View)), Doc.EmbedView(Map3((_1, _2, _3) => {
     const startDayOffset=_3=="Sunday"?0:_3=="Monday"?1:_3=="Tuesday"?2:_3=="Wednesday"?3:_3=="Thursday"?4:_3=="Friday"?5:_3=="Saturday"?6:1;
@@ -334,7 +342,7 @@ export function ProductsPage(){
   }))))), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-xs font-bold text-gray-700 mb-2 pl-2")], [Doc.TextNode("Unit")]), Doc.Input([Attr.Create("class", "neo-pressed w-full rounded-xl py-4 px-5 text-gray-800 focus:outline-none")], newUnit)])]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-xs font-bold text-gray-700 mb-2 pl-2")], [Doc.TextNode("Current Stock")]), Doc.Input([Attr.Create("class", "neo-pressed w-full rounded-xl py-4 px-5 text-gray-800 focus:outline-none")], newStock)]), Doc.Element("div", [Attr.Create("class", "flex space-x-4 mt-8")], ofSeq(delay(() => append([Doc.Element("button", [Attr.Create("class", "flex-1 neo-flat py-4 rounded-xl font-bold text-gray-600 active:scale-95 transition"), Handler("click", () =>() => showAddModal.Set(false))], [Doc.TextNode("Cancel")])], delay(() => {
     const accent=Map((s) => getSeasonTheme(s, "text", "600"), season);
     return[Button([Doc.TextNode("Save Product")], Map((a) =>"flex-1 "+a, accent), () => {
-      StartImmediate(Delay(() => newName.Get()!=""?Bind_1(AddProduct(New_5(0, newName.Get(), newCategory.Get(), Number(newStock.Get()), newUnit.Get(), 0, 0, 0, 0)), (a) => a.$==0?(newName.Set(""),newStock.Set("0"),showAddModal.Set(false),loadProducts(),Zero()):a.$==3?(alert(a.$0),Zero()):Zero()):Zero()), null);
+      StartImmediate(Delay(() => newName.Get()!=""?Bind_1(AddProduct(New_6(0, newName.Get(), newCategory.Get(), Number(newStock.Get()), newUnit.Get(), 0, 0, 0, 0)), (a) => a.$==0?(newName.Set(""),newStock.Set("0"),showAddModal.Set(false),loadProducts(),Zero()):a.$==3?(alert(a.$0),Zero()):Zero()):Zero()), null);
     })];
   })))))])])]):Doc.Empty, showAddModal.View)), Doc.Element("div", [Attr.Create("class", "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8")], [Doc.EmbedView(Map((a) => Doc.Concat(a), Map((ps) => length(ps)===0?ofArray([Doc.Element("div", [Attr.Create("class", "col-span-full neo-pressed p-20 rounded-3xl text-center opacity-40")], [Doc.Element("div", [Attr.Create("class", "text-gray-600 font-bold italic mb-2")], [Doc.TextNode("Inventory is empty")]), Doc.Element("div", [Attr.Create("class", "text-[10px] text-gray-600 uppercase tracking-widest")], [Doc.TextNode("Start by adding your first product")])])]):map_1((p) => {
     let _1=[Attr.Create("class", "neo-nav-item p-6 rounded-3xl group relative")];
@@ -383,7 +391,7 @@ export function RecipesPage(){
   }))))), Doc.EmbedView(Map((show) => show?Doc.Element("div", [Attr.Create("class", "fixed inset-0 z-[200] flex items-center justify-center p-6")], [Doc.Element("div", [Attr.Create("class", "absolute inset-0 bg-gray-900 bg-opacity-30 backdrop-blur-sm"), Handler("click", () =>() => showAddModal.Set(false))], []), Doc.Element("div", [Attr.Create("class", "relative w-full max-w-lg neo-flat p-8 rounded-3xl")], [Doc.Element("h2", [Attr.Create("class", "text-2xl font-bold mb-6 text-gray-900")], [Doc.TextNode("Cookbook Entry")]), Doc.Element("div", [Attr.Create("class", "space-y-4")], [Doc.Element("div", [Attr.Create("class", "grid grid-cols-3 gap-4 mb-4")], [Doc.Concat(map_1((i) => Doc.Element("button", [Dynamic("class", Map((current) => current==i?"neo-pressed p-4 rounded-xl text-2xl":"neo-flat p-4 rounded-xl text-2xl active:scale-95 transition", newIcon.View)), Handler("click", () =>() => newIcon.Set(i))], [Doc.TextNode(i)]), ofArray(["\ud83e\udd57", "\ud83e\udd69", "\ud83c\udf5d", "\ud83e\udd51", "\ud83e\udd6a", "\ud83c\udf70"])))]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-xs font-bold text-gray-700 mb-2 pl-2")], [Doc.TextNode("Recipe Name")]), Doc.Input([Attr.Create("class", "neo-pressed w-full rounded-xl py-4 px-5 text-gray-800 focus:outline-none")], newName)]), Doc.Element("div", [Attr.Create("class", "grid grid-cols-2 gap-4")], [Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-xs font-bold text-gray-700 mb-2 pl-2")], [Doc.TextNode("Prep Time (min)")]), Doc.Input([Attr.Create("class", "neo-pressed w-full rounded-xl py-4 px-5 text-gray-800 focus:outline-none")], newPrep)]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-xs font-bold text-gray-700 mb-2 pl-2")], [Doc.TextNode("Calories (kcal)")]), Doc.Input([Attr.Create("class", "neo-pressed w-full rounded-xl py-4 px-5 text-gray-800 focus:outline-none")], newKcal)])]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-xs font-bold text-gray-700 mb-2 pl-2")], [Doc.TextNode("Instructions")]), Doc.Input([Attr.Create("class", "neo-pressed w-full rounded-xl py-4 px-5 text-gray-800 focus:outline-none")], newInst)]), Doc.Element("div", [Attr.Create("class", "flex space-x-4 mt-8")], ofSeq(delay(() => append([Doc.Element("button", [Attr.Create("class", "flex-1 neo-flat py-4 rounded-xl font-bold text-gray-600 active:scale-95 transition"), Handler("click", () =>() => showAddModal.Set(false))], [Doc.TextNode("Cancel")])], delay(() => {
     const accent=Map((s) => getSeasonTheme(s, "text", "600"), season);
     return[Button([Doc.TextNode("Save Cookbook")], Map((a) =>"flex-1 "+a, accent), () => {
-      StartImmediate(Delay(() => newName.Get()!=""?Bind_1(AddRecipe(New_1(0, newName.Get(), newInst.Get(), toInt(Number(newPrep.Get())), toInt(Number(newKcal.Get())), newIcon.Get())), (a) => a.$==0?(newName.Set(""),showAddModal.Set(false),loadRecipes(),Zero()):a.$==3?(alert(a.$0),Zero()):Zero()):Zero()), null);
+      StartImmediate(Delay(() => newName.Get()!=""?Bind_1(AddRecipe(New_2(0, newName.Get(), newInst.Get(), toInt(Number(newPrep.Get())), toInt(Number(newKcal.Get())), newIcon.Get())), (a) => a.$==0?(newName.Set(""),showAddModal.Set(false),loadRecipes(),Zero()):a.$==3?(alert(a.$0),Zero()):Zero()):Zero()), null);
     })];
   })))))])])]):Doc.Empty, showAddModal.View)), Doc.Element("div", [Attr.Create("class", "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8")], [Doc.EmbedView(Map((a) => Doc.Concat(a), Map((rs) => length(rs)===0?ofArray([Doc.Element("div", [Attr.Create("class", "col-span-full neo-pressed p-20 rounded-3xl text-center opacity-40")], [Doc.Element("div", [Attr.Create("class", "text-gray-600 font-bold italic mb-2")], [Doc.TextNode("Your cookbook is empty")]), Doc.Element("div", [Attr.Create("class", "text-[10px] text-gray-600 uppercase tracking-widest")], [Doc.TextNode("Share your first secret recipe")])])]):map_1((r) => Doc.Element("div", [Attr.Create("class", "neo-nav-item p-6 rounded-3xl group cursor-pointer hover:scale-[1.01] transition duration-300")], [Doc.Element("div", [Attr.Create("class", "w-full h-40 neo-pressed rounded-2xl mb-4 overflow-hidden flex items-center justify-center text-6xl")], [Doc.TextNode(r.Icon)]), Doc.Element("h3", [Attr.Create("class", "font-black text-gray-800 text-xl")], [Doc.TextNode(r.Name)]), Doc.Element("p", [Attr.Create("class", "text-sm text-gray-600 mt-2 line-clamp-2 italic")], [Doc.TextNode(r.Instructions)]), Doc.Element("div", [Attr.Create("class", "flex justify-between mt-6 pt-4 border-t border-gray-100")], [Doc.Element("div", [Attr.Create("class", "flex items-center space-x-1 text-gray-700")], [Doc.Verbatim("<svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg>"), Doc.Element("span", [Attr.Create("class", "text-xs font-bold")], [Doc.TextNode(String(r.PrepTime)+"m")])]), Doc.Element("div", [Attr.Create("class", "flex items-center space-x-1 text-orange-400")], [Doc.Verbatim("<svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.5-7 3 3 5.5 6 5.5 9.5a7 7 0 01-2.343 5.657z\"></path></svg>"), Doc.Element("span", [Attr.Create("class", "text-xs font-bold")], [Doc.TextNode(String(r.Kcal)+" kcal")])])])]), ofArray(rs)), recipes.View)))])])]);
 }
@@ -412,15 +420,15 @@ export function RecordsPage(){
     const accentBg=Map((s) => getSeasonTheme(s, "bg", "100"), season);
     Map((s) => getSeasonTheme(s, "text", "600"), season);
     return[Button([Doc.TextNode("Save Entry")], accentBg, () => {
-      StartImmediate(Delay(() => newValue.Get()!=""?Bind_1(AddHealthRecord(New_6(0, Date.now(), newType.Get(), newValue.Get(), newUnit.Get(), "Normal")), (a) => a.$==0?(newValue.Set(""),loadRecords(),Zero()):a.$==3?(alert(a.$0),Zero()):Zero()):Zero()), null);
+      StartImmediate(Delay(() => newValue.Get()!=""?Bind_1(AddHealthRecord(New_7(0, Date.now(), newType.Get(), newValue.Get(), newUnit.Get(), "Normal")), (a) => a.$==0?(newValue.Set(""),loadRecords(),Zero()):a.$==3?(alert(a.$0),Zero()):Zero()):Zero()), null);
     })];
   })))))))))]), Doc.Element("div", [Attr.Create("class", "neo-flat p-8 rounded-3xl")], [Doc.Element("table", [Attr.Create("class", "w-full text-left")], [Doc.Element("thead", [], [Doc.Element("tr", [Attr.Create("class", "text-gray-600 text-sm uppercase tracking-wider")], [Doc.Element("th", [Attr.Create("class", "pb-4 pl-4")], [Doc.TextNode("Date")]), Doc.Element("th", [Attr.Create("class", "pb-4")], [Doc.TextNode("Type")]), Doc.Element("th", [Attr.Create("class", "pb-4")], [Doc.TextNode("Value")]), Doc.Element("th", [Attr.Create("class", "pb-4 pr-4 text-right")], [Doc.TextNode("Status")])])]), Doc.Element("tbody", [], [Doc.EmbedView(Map((a) => Doc.Concat(a), Map((rs) => length(rs)===0?ofArray([Doc.Element("tr", [], [Doc.Element("td", [Attr.Create("colspan", "4"), Attr.Create("class", "text-center py-10 text-gray-600 italic")], [Doc.TextNode("No records found. Add your first measurement above.")])])]):map_1((r) => Doc.Element("tr", [Attr.Create("class", "border-t border-gray-100")], [Doc.Element("td", [Attr.Create("class", "py-4 pl-4 font-medium text-gray-600")], [Doc.TextNode(DateFormatter(r.RecordDate, "yyyy-MM-dd HH:mm"))]), Doc.Element("td", [Attr.Create("class", "py-4 text-gray-700")], [Doc.TextNode(r.Type)]), Doc.Element("td", [Attr.Create("class", "py-4 text-gray-700 font-bold")], [Doc.TextNode(r.Value+" "+r.Unit)]), Doc.Element("td", [Attr.Create("class", "py-4 pr-4 text-right")], [Doc.Element("span", [Attr.Create("class", "px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-bold")], [Doc.TextNode(r.Status)])])]), ofArray(rs)), records.View)))])])])])]);
 }
 export function SettingsPanel(){
   const usernameStatus=_c.Create_1(null);
   const usernameMessage=_c.Create_1("");
-  const userSettings=_c.Create_1(New_3("", "", null, "Monday", null, true));
-  const healthSettings=_c.Create_1(New_7("Male", 175, 70, "", 1990, 1, 1, "", "", ""));
+  const userSettings=_c.Create_1(New_4("", "", null, "Monday", null, true));
+  const healthSettings=_c.Create_1(New_1("Male", 175, 70, "", 1990, 1, 1, "", "", "", 3, "", "", ""));
   const username=_c.Create_1("Loading...");
   const newUsername=_c.Create_1("");
   const email=_c.Create_1("user@example.com");
@@ -476,11 +484,12 @@ export function SettingsPanel(){
   Sink((day) => {
     if(day!="Loading..."&&username.Get()!="Loading...")StartImmediate(Delay(() => {
       const _1=userSettings.Get();
-      let _2=New_3(_1.Username, _1.Email, _1.PendingEmail, day, Some(avatarUrl.Get()), _1.IsProfilePublic);
+      let _2=New_4(_1.Username, _1.Email, _1.PendingEmail, day, Some(avatarUrl.Get()), _1.IsProfilePublic);
       let _3=UpdateUserSettings(_2);
       return Bind_1(_3, () => Zero());
     }), null);
   }, calendarStartDay.View);
+  const saveButton=(textContent) => Doc.Element("button", [Attr.Create("class", "w-full py-4 mt-6 rounded-2xl font-bold text-gray-700 transition-all duration-300 neo-level-1 hover:neo-level-2 active:neo-pressed active:translate-y-px"), Handler("click", () =>() => StartImmediate(Delay(() => Bind_1(SaveHealthSettings(healthSettings.Get()), (a) => a.$==0?(showToast("Health profile saved!", Success),Zero()):a.$==3?(showToast(a.$0, Error_2),Zero()):Zero())), null))], [Doc.TextNode(textContent)]);
   disableTransitionsOnLoad();
   return Doc.Element("div", [Attr.Create("class", "flex h-screen bg-[#e0e5ec] w-full overflow-hidden mt-0")], [Sidebar("Settings", username, season, isMenuCollapsed().View, () => {
     isMenuCollapsed().Set(!isMenuCollapsed().Get());
@@ -504,7 +513,7 @@ export function SettingsPanel(){
             const newUrl=a.$0;
             avatarUrl.Set(newUrl);
             const _3=userSettings.Get();
-            let _4=New_3(_3.Username, _3.Email, _3.PendingEmail, _3.CalendarStartDay, Some(newUrl), _3.IsProfilePublic);
+            let _4=New_4(_3.Username, _3.Email, _3.PendingEmail, _3.CalendarStartDay, Some(newUrl), _3.IsProfilePublic);
             userSettings.Set(_4);
             showToast("Avatar updated!", Success);
             return Zero();
@@ -532,24 +541,50 @@ export function SettingsPanel(){
     if(newPassword.Get()!=confirmPassword.Get())showToast("Passwords do not match!", Error_2);
     else if(newPassword.Get()=="")showToast("Password cannot be empty!", Error_2);
     else StartImmediate(Delay(() => Bind_1(ChangePassword_1(newPassword.Get()), (a) => a.$==0?(showToast("Password updated!", Success),newPassword.Set(""),confirmPassword.Set(""),Zero()):a.$==3?(showToast(a.$0, Error_2),Zero()):Zero())), null);
-  })]), Doc.Element("div", [Attr.Create("class", "h-px w-full bg-white opacity-40 my-10")], []), Doc.Element("div", [Attr.Create("class", "flex items-center justify-between")], [Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-1 pl-2")], [Doc.TextNode("Public Profile")]), Doc.Element("p", [Attr.Create("class", "text-xs text-gray-500 pl-2")], [Doc.TextNode("Make your @username profile available to others.")])]), Doc.Element("label", [Attr.Create("class", "cursor-pointer relative")], [Doc.CheckBox([Attr.Create("class", "sr-only peer"), Handler("change", () =>() => StartImmediate(Delay(() => Bind_1(ToggleProfilePublic(isProfilePublic.Get()), (a) => a.$==0?(showToast("Privacy updated!", Success),Zero()):a.$==3?(showToast(a.$0, Error_2),Zero()):Zero())), null))], isProfilePublic), Doc.Element("div", [Attr.Create("class", "w-11 h-6 neo-pressed rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:neo-level-1 after:bg-[#e0e5ec] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-400")], [])])])])]):t=="Health"?Doc.Element("div", [Attr.Create("class", "max-w-md w-full")], [Doc.Element("div", [Attr.Create("class", "neo-flat p-8 rounded-3xl mb-8")], [Doc.Element("h3", [Attr.Create("class", "text-lg font-bold text-gray-800 mb-8 border-b border-gray-100 pb-4")], [Doc.TextNode("Health Information")]), Doc.Element("div", [Attr.Create("class", "space-y-8")], [Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-4 pl-2")], [Doc.TextNode("Biological Sex")]), Doc.Element("div", [Attr.Create("class", "flex space-x-4")], ofSeq(delay(() => map((sex) => Doc.Element("button", [Dynamic("class", Map((hs) => hs.Sex==sex?"flex-1 py-4 rounded-2xl font-bold transition-all duration-300 "+"neo-pressed text-emerald-600":"flex-1 py-4 rounded-2xl font-bold transition-all duration-300 "+"neo-flat text-gray-600 hover:text-gray-900", healthSettings.View)), Handler("click", () =>() => {
+  })]), Doc.Element("div", [Attr.Create("class", "h-px w-full bg-white opacity-40 my-10")], []), Doc.Element("div", [Attr.Create("class", "flex items-center justify-between")], [Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-1 pl-2")], [Doc.TextNode("Public Profile")]), Doc.Element("p", [Attr.Create("class", "text-xs text-gray-500 pl-2")], [Doc.TextNode("Make your @username profile available to others.")])]), Doc.Element("label", [Attr.Create("class", "cursor-pointer relative")], [Doc.CheckBox([Attr.Create("class", "sr-only peer"), Handler("change", () =>() => StartImmediate(Delay(() => Bind_1(ToggleProfilePublic(isProfilePublic.Get()), (a) => a.$==0?(showToast("Privacy updated!", Success),Zero()):a.$==3?(showToast(a.$0, Error_2),Zero()):Zero())), null))], isProfilePublic), Doc.Element("div", [Attr.Create("class", "w-11 h-6 neo-pressed rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:neo-level-1 after:bg-[#e0e5ec] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-400")], [])])])])]):t=="Health"?Doc.Element("div", [Attr.Create("class", "flex flex-col lg:flex-row gap-8 w-full max-w-7xl")], [Doc.Element("div", [Attr.Create("class", "flex-1 neo-flat p-8 rounded-3xl flex flex-col")], [Doc.Element("h3", [Attr.Create("class", "text-lg font-bold text-gray-800 mb-8 border-b border-gray-100 pb-4")], [Doc.TextNode("Health Information")]), Doc.Element("div", [Attr.Create("class", "space-y-8")], [Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-4 pl-2")], [Doc.TextNode("Biological Sex")]), Doc.Element("div", [Attr.Create("class", "flex space-x-4")], ofSeq(delay(() => map((sex) => Doc.Element("button", [Dynamic("class", Map((hs) => hs.Sex==sex?"flex-1 py-4 rounded-2xl font-bold transition-all duration-300 "+"neo-pressed text-emerald-600":"flex-1 py-4 rounded-2xl font-bold transition-all duration-300 "+"neo-flat text-gray-600 hover:text-gray-900", healthSettings.View)), Handler("click", () =>() => {
     const _1=healthSettings.Get();
-    return healthSettings.Set(New_7(sex, _1.HeightCm, _1.WeightKg, _1.BloodType, _1.BirthYear, _1.BirthMonth, _1.BirthDay, _1.JobType, _1.ExerciseFrequency, _1.ExerciseTypes));
-  })], [Doc.TextNode(sex)]), ["Male", "Female", "Other"]))))]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-3 pl-2")], [Doc.TextNode("Blood Type")]), Select(ofArray(["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]), _c.Lens(healthSettings, (hs) => hs.BloodType, (_1, _2) => New_7(_1.Sex, _1.HeightCm, _1.WeightKg, _2, _1.BirthYear, _1.BirthMonth, _1.BirthDay, _1.JobType, _1.ExerciseFrequency, _1.ExerciseTypes)), (x) => x, "Select Bloodtype", accentText, accentBg, false)]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-3 pl-2")], [Doc.TextNode("Type of Job")]), Select(ofArray(["Sedentary", "Lightly Active", "Moderately Active", "Very Active", "Extreme"]), _c.Lens(healthSettings, (hs) => hs.JobType, (_1, _2) => New_7(_1.Sex, _1.HeightCm, _1.WeightKg, _1.BloodType, _1.BirthYear, _1.BirthMonth, _1.BirthDay, _2, _1.ExerciseFrequency, _1.ExerciseTypes)), (x) => x, "Select Type of Job", accentText, accentBg, false)]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-3 pl-2")], [Doc.TextNode("Exercise Frequency")]), Select(ofArray(["Never", "1-2 times/week", "3-4 times/week", "Daily", "Athletic"]), _c.Lens(healthSettings, (hs) => hs.ExerciseFrequency, (_1, _2) => New_7(_1.Sex, _1.HeightCm, _1.WeightKg, _1.BloodType, _1.BirthYear, _1.BirthMonth, _1.BirthDay, _1.JobType, _2, _1.ExerciseTypes)), (x) => x, "Select Exercise Frequency", accentText, accentBg, false)]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-4 pl-2")], [Doc.TextNode("Type of Exercise")]), Doc.Element("div", [Attr.Create("class", "grid grid-cols-2 gap-3")], ofSeq(delay(() => map((exercise) => Doc.Element("button", [Dynamic("class", Map((hs) => {
-    const baseClass="py-3 px-4 rounded-xl font-bold text-xs transition-all duration-200 ";
-    return arrContains(exercise, SplitChars(hs.ExerciseTypes, [","], 1))?baseClass+"neo-pressed text-emerald-600":baseClass+"neo-flat text-gray-600 hover:text-emerald-400";
+    return healthSettings.Set(New_1(sex, _1.HeightCm, _1.WeightKg, _1.BloodType, _1.BirthYear, _1.BirthMonth, _1.BirthDay, _1.JobType, _1.ExerciseFrequency, _1.ExerciseTypes, _1.MealFrequency, _1.DietType, _1.Allergies, _1.OtherAllergies));
+  })], [Doc.TextNode(sex)]), ["Male", "Female"]))))]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-3 pl-2")], [Doc.TextNode("Blood Type")]), Select(ofArray(["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]), _c.Lens(healthSettings, (hs) => hs.BloodType, (_1, _2) => New_1(_1.Sex, _1.HeightCm, _1.WeightKg, _2, _1.BirthYear, _1.BirthMonth, _1.BirthDay, _1.JobType, _1.ExerciseFrequency, _1.ExerciseTypes, _1.MealFrequency, _1.DietType, _1.Allergies, _1.OtherAllergies)), (x) => x, "Select Bloodtype", accentText, accentBg, false)]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-3 pl-2")], [Doc.TextNode("Type of Job")]), Select(ofArray(["Sedentary", "Lightly Active", "Moderately Active", "Very Active", "Extreme"]), _c.Lens(healthSettings, (hs) => hs.JobType, (_1, _2) => New_1(_1.Sex, _1.HeightCm, _1.WeightKg, _1.BloodType, _1.BirthYear, _1.BirthMonth, _1.BirthDay, _2, _1.ExerciseFrequency, _1.ExerciseTypes, _1.MealFrequency, _1.DietType, _1.Allergies, _1.OtherAllergies)), (x) => x, "Select Type of Job", accentText, accentBg, false)]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-3 pl-2")], [Doc.TextNode("Exercise Frequency")]), Select(ofArray(["Never", "1-2 times/week", "3-4 times/week", "Daily"]), _c.Lens(healthSettings, (hs) => hs.ExerciseFrequency, (_1, _2) => New_1(_1.Sex, _1.HeightCm, _1.WeightKg, _1.BloodType, _1.BirthYear, _1.BirthMonth, _1.BirthDay, _1.JobType, _2, _1.ExerciseTypes, _1.MealFrequency, _1.DietType, _1.Allergies, _1.OtherAllergies)), (x) => x, "Select Exercise Frequency", accentText, accentBg, false)]), Doc.EmbedView(Map((hs) => hs.ExerciseFrequency!="Never"?Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-4 pl-2")], [Doc.TextNode("Type of Exercise")]), Doc.Element("div", [Attr.Create("class", "flex flex-wrap gap-3")], ofSeq(delay(() => map((exercise) => Doc.Element("button", ofSeq(delay(() => {
+    const baseClass="py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 ";
+    return append([Attr.Create("class", arrContains(exercise, SplitChars(hs.ExerciseTypes, [","], 1))?baseClass+"neo-pressed text-emerald-600":baseClass+"neo-flat text-gray-600 hover:text-emerald-400")], delay(() =>[Handler("click", () =>() => {
+      const current=SplitChars(healthSettings.Get().ExerciseTypes, [","], 1);
+      const next=arrContains(exercise, current)?filter((e) => e!=exercise, current):current.concat([exercise]);
+      const _1=healthSettings.Get();
+      let _2=New_1(_1.Sex, _1.HeightCm, _1.WeightKg, _1.BloodType, _1.BirthYear, _1.BirthMonth, _1.BirthDay, _1.JobType, _1.ExerciseFrequency, concat_1(",", next), _1.MealFrequency, _1.DietType, _1.Allergies, _1.OtherAllergies);
+      return healthSettings.Set(_2);
+    })]));
+  })), [Doc.TextNode(exercise)]), ["Running", "Swimming", "Cycling", "Gym", "Yoga", "Sports", "Hiking", "Pilates"]))))]):Doc.Empty, healthSettings.View))]), Doc.Element("div", [Attr.Create("class", "mt-auto pt-6")], [saveButton("Save")])]), Doc.Element("div", [Attr.Create("class", "flex-1 neo-flat p-8 rounded-3xl flex flex-col")], [Doc.Element("h3", [Attr.Create("class", "text-lg font-bold text-gray-800 mb-8 border-b border-gray-100 pb-4")], [Doc.TextNode("Meal Preferences")]), Doc.Element("div", [Attr.Create("class", "space-y-8")], [Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-3 pl-2")], [Doc.TextNode("Meals per day")]), Doc.Input([Attr.Create("type", "number"), Attr.Create("class", "neo-pressed rounded-xl w-full py-3 px-5 text-gray-800 focus:outline-none transition mb-2"), Attr.Create("min", "1"), Attr.Create("max", "10")], _c.Lens(healthSettings, (hs) => String(hs.MealFrequency), (hs, v) => {
+    let o;
+    const m=(o=0,[TryParse(v, {get:() => o, set:(v_1) => {
+      o=v_1;
+    }}), o]);
+    if(m[0]){
+      const a=1;
+      const a_1=10;
+      const b=m[1];
+      const b_1=Compare(a_1, b)===-1?a_1:b;
+      let _1=Compare(a, b_1)===1?a:b_1;
+      return New_1(hs.Sex, hs.HeightCm, hs.WeightKg, hs.BloodType, hs.BirthYear, hs.BirthMonth, hs.BirthDay, hs.JobType, hs.ExerciseFrequency, hs.ExerciseTypes, _1, hs.DietType, hs.Allergies, hs.OtherAllergies);
+    }
+    else return hs;
+  })), Doc.Element("p", [Attr.Create("class", "text-xs text-gray-500 pl-2")], [Doc.TextNode("How many times do you want to eat per day (1-10)?")])]), Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-3 pl-2")], [Doc.TextNode("Diet Preference")]), Select(ofArray(["None", "Keto", "Vegan", "Vegetarian", "Paleo", "Mediterranean"]), _c.Lens(healthSettings, (hs) => hs.DietType, (_1, _2) => New_1(_1.Sex, _1.HeightCm, _1.WeightKg, _1.BloodType, _1.BirthYear, _1.BirthMonth, _1.BirthDay, _1.JobType, _1.ExerciseFrequency, _1.ExerciseTypes, _1.MealFrequency, _2, _1.Allergies, _1.OtherAllergies)), (x) => x, "Select Diet", accentText, accentBg, false)])]), Doc.Element("div", [Attr.Create("class", "mt-auto pt-6")], [saveButton("Save")])]), Doc.Element("div", [Attr.Create("class", "flex-1 neo-flat p-8 rounded-3xl flex flex-col")], [Doc.Element("h3", [Attr.Create("class", "text-lg font-bold text-gray-800 mb-8 border-b border-gray-100 pb-4")], [Doc.TextNode("Allergies")]), Doc.Element("div", [Attr.Create("class", "space-y-8")], [Doc.Element("div", [], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-4 pl-2")], [Doc.TextNode("Common Allergies")]), Doc.Element("div", [Attr.Create("class", "flex flex-wrap gap-3")], ofSeq(delay(() => append(map((allergy) => Doc.Element("button", [Dynamic("class", Map((hs) => {
+    const baseClass="py-3 px-4 rounded-xl font-bold text-sm transition-all duration-300 ";
+    return arrContains(allergy, SplitChars(hs.Allergies, [","], 1))?baseClass+"neo-pressed text-emerald-600":baseClass+"neo-flat text-gray-600 hover:text-gray-900";
   }, healthSettings.View)), Handler("click", () =>() => {
-    const current=SplitChars(healthSettings.Get().ExerciseTypes, [","], 1);
-    const next=arrContains(exercise, current)?filter((e) => e!=exercise, current):current.concat([exercise]);
+    let next;
+    const current=SplitChars(healthSettings.Get().Allergies, [","], 1);
+    if(allergy=="None")next=["None"];
+    else {
+      const withoutNone=filter((a) => a!="None", current);
+      next=arrContains(allergy, withoutNone)?filter((a) => a!=allergy, withoutNone):withoutNone.concat([allergy]);
+    }
     const _1=healthSettings.Get();
-    let _2=New_7(_1.Sex, _1.HeightCm, _1.WeightKg, _1.BloodType, _1.BirthYear, _1.BirthMonth, _1.BirthDay, _1.JobType, _1.ExerciseFrequency, concat_1(",", next));
+    let _2=New_1(_1.Sex, _1.HeightCm, _1.WeightKg, _1.BloodType, _1.BirthYear, _1.BirthMonth, _1.BirthDay, _1.JobType, _1.ExerciseFrequency, _1.ExerciseTypes, _1.MealFrequency, _1.DietType, concat_1(",", next), _1.OtherAllergies);
     return healthSettings.Set(_2);
-  })], [Doc.TextNode(exercise)]), ["Running", "Swimming", "Cycling", "Gym", "Yoga", "Sports", "Hiking", "Pilates"]))))])]), Doc.Element("div", [Attr.Create("class", "mt-10")], [Button([Doc.TextNode("Save Health Profile")], accentBg, () => {
-    StartImmediate(Delay(() => Bind_1(SaveHealthSettings(healthSettings.Get()), (a) => a.$==0?(showToast("Health profile saved!", Success),Zero()):a.$==3?(showToast(a.$0, Error_2),Zero()):Zero())), null);
-  })])])]):t=="Calendar"?Doc.Element("div", [Attr.Create("class", "max-w-md w-full")], [Doc.Element("div", [Attr.Create("class", "neo-flat p-8 rounded-3xl")], [Doc.Element("h3", [Attr.Create("class", "text-lg font-bold text-gray-800 mb-6")], [Doc.TextNode("Calendar Preferences")]), Doc.Element("div", [Attr.Create("class", "mb-6")], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-3 pl-2")], [Doc.TextNode("First day of the week")]), Select(ofArray(["Monday", "Sunday", "Saturday"]), calendarStartDay, (x) => x, "Select Day", accentText, accentBg, false)]), Button([Doc.TextNode("Update Calendar")], accentBg, () => {
+  })], [Doc.TextNode(allergy)]), ["None", "Gluten", "Dairy", "Nuts", "Other"]), delay(() =>[Doc.EmbedView(Map((hs) => arrContains("Other", SplitChars(hs.Allergies, [","], 1))?Doc.Input([Attr.Create("class", "neo-pressed rounded-xl py-3 px-5 text-sm font-bold text-gray-800 focus:outline-none transition min-w-[120px]"), Attr.Create("placeholder", "Specify...")], _c.Lens(healthSettings, (h) => h.OtherAllergies, (_1, _2) => New_1(_1.Sex, _1.HeightCm, _1.WeightKg, _1.BloodType, _1.BirthYear, _1.BirthMonth, _1.BirthDay, _1.JobType, _1.ExerciseFrequency, _1.ExerciseTypes, _1.MealFrequency, _1.DietType, _1.Allergies, _2))):Doc.Empty, healthSettings.View))])))))])]), Doc.Element("div", [Attr.Create("class", "mt-auto pt-6")], [saveButton("Save")])])]):t=="Calendar"?Doc.Element("div", [Attr.Create("class", "max-w-md w-full")], [Doc.Element("div", [Attr.Create("class", "neo-flat p-8 rounded-3xl")], [Doc.Element("h3", [Attr.Create("class", "text-lg font-bold text-gray-800 mb-6")], [Doc.TextNode("Calendar Preferences")]), Doc.Element("div", [Attr.Create("class", "mb-6")], [Doc.Element("label", [Attr.Create("class", "block text-gray-800 text-sm font-bold mb-3 pl-2")], [Doc.TextNode("First day of the week")]), Select(ofArray(["Monday", "Sunday", "Saturday"]), calendarStartDay, (x) => x, "Select Day", accentText, accentBg, false)]), Button([Doc.TextNode("Update Calendar")], accentBg, () => {
     StartImmediate(Delay(() => {
       const _1=userSettings.Get();
-      let _2=New_3(_1.Username, _1.Email, _1.PendingEmail, calendarStartDay.Get(), _1.AvatarUrl, _1.IsProfilePublic);
+      let _2=New_4(_1.Username, _1.Email, _1.PendingEmail, calendarStartDay.Get(), _1.AvatarUrl, _1.IsProfilePublic);
       let _3=UpdateUserSettings(_2);
       return Bind_1(_3, (a) => a.$==0?(showToast("Calendar settings saved!", Success),Zero()):a.$==3?(showToast(a.$0, Error_2),Zero()):Zero());
     }), null);
@@ -850,13 +885,13 @@ let _c=Lazy((_i) => class Var_1 extends Object_1 {
 function Error_1(Item){
   return{$:3, $0:Item};
 }
-function toInt(x){
-  const u=toUInt(x);
-  return u>2147483647?u-4294967296:u;
-}
 function range(min, max_1){
   const count=1+max_1-min;
   return count<=0?[]:init(count, (x) => x+min);
+}
+function toInt(x){
+  const u=toUInt(x);
+  return u>2147483647?u-4294967296:u;
 }
 function toUInt(x){
   return(x<0?Math.ceil(x):Math.floor(x))>>>0;
@@ -884,6 +919,9 @@ function GetMealPlansRange(startDate, endDate){
 }
 function GetRecipes(){
   return Bind_1((new AjaxRemotingProvider()).Async("Server/GetRecipes", []), (o) => Return(o));
+}
+function GetHealthSettings(){
+  return Bind_1((new AjaxRemotingProvider()).Async("Server/GetHealthSettings", []), (o) => Return(o));
 }
 function AddMealPlan(m){
   return Bind_1((new AjaxRemotingProvider()).Async("Server/AddMealPlan", [(EncodeJson_MealPlanItem())(m)]), (o) => Return((DecodeJson_AuthResult())(o)));
@@ -917,9 +955,6 @@ function AddHealthRecord(r){
 }
 function CheckUsernameAvailability(username){
   return Bind_1((new AjaxRemotingProvider()).Async("Server/CheckUsernameAvailability", [username]), (o) => Return(o));
-}
-function GetHealthSettings(){
-  return Bind_1((new AjaxRemotingProvider()).Async("Server/GetHealthSettings", []), (o) => Return(o));
 }
 function UpdateUserSettings(s){
   return Bind_1((new AjaxRemotingProvider()).Async("Server/UpdateUserSettings", [(EncodeJson_GlobalSettings())(s)]), (o) => Return((DecodeJson_AuthResult())(o)));
@@ -1297,9 +1332,6 @@ function FullWidthButton(content, accent, onClick){
 let Info={$:3};
 let Success={$:0};
 let Error_2={$:1};
-function toSafe(s){
-  return s==null?"":s;
-}
 function ofArray(arr){
   let r=FSharpList.Empty;
   for(let i=length(arr)-1, _1=0;i>=_1;i--)r=FSharpList.Cons(get(arr, i), r);
@@ -1396,6 +1428,27 @@ function tail(l){
 }
 function listEmpty(){
   return FailWith("The input list was empty.");
+}
+function New_1(Sex, HeightCm, WeightKg, BloodType, BirthYear, BirthMonth, BirthDay, JobType, ExerciseFrequency, ExerciseTypes, MealFrequency, DietType, Allergies, OtherAllergies){
+  return{
+    Sex:Sex, 
+    HeightCm:HeightCm, 
+    WeightKg:WeightKg, 
+    BloodType:BloodType, 
+    BirthYear:BirthYear, 
+    BirthMonth:BirthMonth, 
+    BirthDay:BirthDay, 
+    JobType:JobType, 
+    ExerciseFrequency:ExerciseFrequency, 
+    ExerciseTypes:ExerciseTypes, 
+    MealFrequency:MealFrequency, 
+    DietType:DietType, 
+    Allergies:Allergies, 
+    OtherAllergies:OtherAllergies
+  };
+}
+function toSafe(s){
+  return s==null?"":s;
 }
 function tryFind(f, arr){
   let res=null;
@@ -1509,7 +1562,7 @@ function forall_1(f, x){
     else a=false;
   return a;
 }
-function New_1(Id_2, Name, Instructions, PrepTime, Kcal, Icon){
+function New_2(Id_2, Name, Instructions, PrepTime, Kcal, Icon){
   return{
     Id:Id_2, 
     Name:Name, 
@@ -1547,7 +1600,7 @@ class FSharpList {
   $0;
   $1;
 }
-function New_2(Id_2, PlanDate, MealType, RecipeId, Title, Notes){
+function New_3(Id_2, PlanDate, MealType, RecipeId, Title, Notes){
   return{
     Id:Id_2, 
     PlanDate:PlanDate, 
@@ -1560,7 +1613,7 @@ function New_2(Id_2, PlanDate, MealType, RecipeId, Title, Notes){
 function Some(Value_1){
   return{$:1, $0:Value_1};
 }
-function New_3(Username, Email, PendingEmail, CalendarStartDay, AvatarUrl, IsProfilePublic){
+function New_4(Username, Email, PendingEmail, CalendarStartDay, AvatarUrl, IsProfilePublic){
   return{
     Username:Username, 
     Email:Email, 
@@ -1570,7 +1623,7 @@ function New_3(Username, Email, PendingEmail, CalendarStartDay, AvatarUrl, IsPro
     IsProfilePublic:IsProfilePublic
   };
 }
-function New_4(Id_2, Title, Description, EventDate, EventType, Icon){
+function New_5(Id_2, Title, Description, EventDate, EventType, Icon){
   return{
     Id:Id_2, 
     Title:Title, 
@@ -1580,7 +1633,7 @@ function New_4(Id_2, Title, Description, EventDate, EventType, Icon){
     Icon:Icon
   };
 }
-function New_5(Id_2, Name, Category, Stock, Unit, Calories, Carbs, Protein, Fat){
+function New_6(Id_2, Name, Category, Stock, Unit, Calories, Carbs, Protein, Fat){
   return{
     Id:Id_2, 
     Name:Name, 
@@ -1593,7 +1646,7 @@ function New_5(Id_2, Name, Category, Stock, Unit, Calories, Carbs, Protein, Fat)
     Fat:Fat
   };
 }
-function New_6(Id_2, RecordDate, Type, Value_1, Unit, Status){
+function New_7(Id_2, RecordDate, Type, Value_1, Unit, Status){
   return{
     Id:Id_2, 
     RecordDate:RecordDate, 
@@ -1601,20 +1654,6 @@ function New_6(Id_2, RecordDate, Type, Value_1, Unit, Status){
     Value:Value_1, 
     Unit:Unit, 
     Status:Status
-  };
-}
-function New_7(Sex, HeightCm, WeightKg, BloodType, BirthYear, BirthMonth, BirthDay, JobType, ExerciseFrequency, ExerciseTypes){
-  return{
-    Sex:Sex, 
-    HeightCm:HeightCm, 
-    WeightKg:WeightKg, 
-    BloodType:BloodType, 
-    BirthYear:BirthYear, 
-    BirthMonth:BirthMonth, 
-    BirthDay:BirthDay, 
-    JobType:JobType, 
-    ExerciseFrequency:ExerciseFrequency, 
-    ExerciseTypes:ExerciseTypes
   };
 }
 function concat_1(separator, strings){
@@ -1652,6 +1691,175 @@ function forall_2(f, s){
 }
 function protect(s){
   return s==null?"":s;
+}
+class Attr {
+  static Create(name, value){
+    return Attr.A3((el) => {
+      el.setAttribute(name, value);
+    });
+  }
+  static Concat(xs){
+    const x=ofSeqNonCopying(xs);
+    return TreeReduce(EmptyAttr(), (_1, _2) => AppendTree(_1, _2), x);
+  }
+  static A3(init_3){
+    return Create_2(Attr, {$:3, $0:init_3});
+  }
+  static A1(Item){
+    return Create_2(Attr, {$:1, $0:Item});
+  }
+  static A2(Item1, Item2){
+    return Create_2(Attr, {
+      $:2, 
+      $0:Item1, 
+      $1:Item2
+    });
+  }
+  $;
+  $0;
+  $1;
+}
+function Equals(a, b){
+  if(a===b)return true;
+  else {
+    const m=typeof a;
+    if(m=="object"){
+      if(a===null||a===void 0||b===null||b===void 0||!Equals(typeof b, "object"))return false;
+      else if("Equals"in a)return a.Equals(b);
+      else if("Equals"in b)return false;
+      else if(a instanceof Array&&b instanceof Array)return arrayEquals(a, b);
+      else if(a instanceof Date&&b instanceof Date)return dateEquals(a, b);
+      else {
+        const a_1=a;
+        const b_1=b;
+        const eqR=[true];
+        let k;
+        for(var k_2 in a_1)if(((k_3) => {
+          eqR[0]=!a_1.hasOwnProperty(k_3)||b_1.hasOwnProperty(k_3)&&Equals(a_1[k_3], b_1[k_3]);
+          return!eqR[0];
+        })(k_2))break;
+        if(eqR[0]){
+          let k_1;
+          for(var k_3 in b_1)if(((k_4) => {
+            eqR[0]=!b_1.hasOwnProperty(k_4)||a_1.hasOwnProperty(k_4);
+            return!eqR[0];
+          })(k_3))break;
+        }
+        return eqR[0];
+      }
+    }
+    else return m=="function"&&("$Func"in a?a.$Func===b.$Func&&a.$Target===b.$Target:"$Invokes"in a&&"$Invokes"in b&&arrayEquals(a.$Invokes, b.$Invokes));
+  }
+}
+function Compare(a, b){
+  if(a===b)return 0;
+  else {
+    const m=typeof a;
+    switch(m=="boolean"?1:m=="number"?1:m=="bigint"?1:m=="string"?1:m=="object"?2:m=="function"?3:m=="symbol"?4:0){
+      case 0:
+        return typeof b=="undefined"?0:-1;
+      case 1:
+        return a<b?-1:1;
+      case 2:
+        if(a===null)return -1;
+        else if(b===null)return 1;
+        else if("CompareTo"in a)return a.CompareTo(b);
+        else if("CompareTo0"in a)return a.CompareTo0(b);
+        else if(a instanceof Array&&b instanceof Array)return compareArrays(a, b);
+        else if(a instanceof Date&&b instanceof Date)return compareDates(a, b);
+        else {
+          const a_1=a;
+          const b_1=b;
+          const cmp=[0];
+          let k;
+          for(var k_2 in a_1)if(((k_3) =>!a_1.hasOwnProperty(k_3)?false:!b_1.hasOwnProperty(k_3)?(cmp[0]=1,true):(cmp[0]=Compare(a_1[k_3], b_1[k_3]),cmp[0]!==0))(k_2))break;
+          if(cmp[0]===0){
+            let k_1;
+            for(var k_3 in b_1)if(((k_4) =>!b_1.hasOwnProperty(k_4)?false:!a_1.hasOwnProperty(k_4)&&(cmp[0]=-1,true))(k_3))break;
+          }
+          return cmp[0];
+        }
+        break;
+      case 3:
+        return FailWith("Cannot compare function values.");
+      case 4:
+        return FailWith("Cannot compare symbol values.");
+    }
+  }
+}
+function arrayEquals(a, b){
+  let eq;
+  let i;
+  if(length(a)===length(b)){
+    eq=true;
+    i=0;
+    while(eq&&i<length(a))
+      {
+        !Equals(get(a, i), get(b, i))?eq=false:void 0;
+        i=i+1;
+      }
+    return eq;
+  }
+  else return false;
+}
+function dateEquals(a, b){
+  return a.getTime()===b.getTime();
+}
+function compareArrays(a, b){
+  let cmp;
+  let i;
+  if(length(a)<length(b))return -1;
+  else if(length(a)>length(b))return 1;
+  else {
+    cmp=0;
+    i=0;
+    while(cmp===0&&i<length(a))
+      {
+        cmp=Compare(get(a, i), get(b, i));
+        i=i+1;
+      }
+    return cmp;
+  }
+}
+function compareDates(a, b){
+  return Compare(a.getTime(), b.getTime());
+}
+function Hash(o){
+  const m=typeof o;
+  return m=="function"?0:m=="boolean"?o?1:0:m=="number"?o:m=="string"?hashString(o):m=="object"?o==null?0:o instanceof Array?hashArray(o):hashObject(o):m=="bigint"?hashString(String(o)):m=="symbol"?hashString(o.description):0;
+}
+function hashString(s){
+  let hash;
+  if(s===null)return 0;
+  else {
+    hash=5381;
+    for(let i=0, _1=s.length-1;i<=_1;i++)hash=hashMix(hash, s[i].charCodeAt());
+    return hash;
+  }
+}
+function hashArray(o){
+  let h=-34948909;
+  for(let i=0, _1=length(o)-1;i<=_1;i++)h=hashMix(h, Hash(get(o, i)));
+  return h;
+}
+function hashObject(o){
+  if("GetHashCode"in o)return o.GetHashCode();
+  else {
+    const ____=hashMix;
+    const h=[0];
+    let k;
+    for(var k_1 in o)if(((key) => {
+      h[0]=____(____(h[0], hashString(key)), Hash(o[key]));
+      return false;
+    })(k_1))break;
+    return h[0];
+  }
+}
+function hashMix(x, y){
+  return(x<<5)+x+y;
+}
+function TryParse(s, r){
+  return TryParse_2(s, -2147483648, 2147483647, r);
 }
 function NewFromSeq(fields){
   const r={};
@@ -2150,33 +2358,6 @@ function DecodeJson_FSharpOption_1(){
 function DecodeJson_PublicProfile(){
   return Decoder_PublicProfile?Decoder_PublicProfile:Decoder_PublicProfile=(DecodeRecord(void 0, [["Username", Id(), 0], ["AvatarUrl", Id(), 1], ["IsPublic", Id(), 0], ["IsOwner", Id(), 0]]))();
 }
-class Attr {
-  static Create(name, value){
-    return Attr.A3((el) => {
-      el.setAttribute(name, value);
-    });
-  }
-  static Concat(xs){
-    const x=ofSeqNonCopying(xs);
-    return TreeReduce(EmptyAttr(), (_1, _2) => AppendTree(_1, _2), x);
-  }
-  static A3(init_3){
-    return Create_2(Attr, {$:3, $0:init_3});
-  }
-  static A1(Item){
-    return Create_2(Attr, {$:1, $0:Item});
-  }
-  static A2(Item1, Item2){
-    return Create_2(Attr, {
-      $:2, 
-      $0:Item1, 
-      $1:Item2
-    });
-  }
-  $;
-  $0;
-  $1;
-}
 let _c_1=Lazy((_i) => class $StartupCode_Client {
   static {
     _c_1=_i(this);
@@ -2260,145 +2441,6 @@ function EmbedDoc(Item){
 }
 function TextDoc(Item){
   return{$:4, $0:Item};
-}
-function Equals(a, b){
-  if(a===b)return true;
-  else {
-    const m=typeof a;
-    if(m=="object"){
-      if(a===null||a===void 0||b===null||b===void 0||!Equals(typeof b, "object"))return false;
-      else if("Equals"in a)return a.Equals(b);
-      else if("Equals"in b)return false;
-      else if(a instanceof Array&&b instanceof Array)return arrayEquals(a, b);
-      else if(a instanceof Date&&b instanceof Date)return dateEquals(a, b);
-      else {
-        const a_1=a;
-        const b_1=b;
-        const eqR=[true];
-        let k;
-        for(var k_2 in a_1)if(((k_3) => {
-          eqR[0]=!a_1.hasOwnProperty(k_3)||b_1.hasOwnProperty(k_3)&&Equals(a_1[k_3], b_1[k_3]);
-          return!eqR[0];
-        })(k_2))break;
-        if(eqR[0]){
-          let k_1;
-          for(var k_3 in b_1)if(((k_4) => {
-            eqR[0]=!b_1.hasOwnProperty(k_4)||a_1.hasOwnProperty(k_4);
-            return!eqR[0];
-          })(k_3))break;
-        }
-        return eqR[0];
-      }
-    }
-    else return m=="function"&&("$Func"in a?a.$Func===b.$Func&&a.$Target===b.$Target:"$Invokes"in a&&"$Invokes"in b&&arrayEquals(a.$Invokes, b.$Invokes));
-  }
-}
-function arrayEquals(a, b){
-  let eq;
-  let i;
-  if(length(a)===length(b)){
-    eq=true;
-    i=0;
-    while(eq&&i<length(a))
-      {
-        !Equals(get(a, i), get(b, i))?eq=false:void 0;
-        i=i+1;
-      }
-    return eq;
-  }
-  else return false;
-}
-function dateEquals(a, b){
-  return a.getTime()===b.getTime();
-}
-function Hash(o){
-  const m=typeof o;
-  return m=="function"?0:m=="boolean"?o?1:0:m=="number"?o:m=="string"?hashString(o):m=="object"?o==null?0:o instanceof Array?hashArray(o):hashObject(o):m=="bigint"?hashString(String(o)):m=="symbol"?hashString(o.description):0;
-}
-function hashString(s){
-  let hash;
-  if(s===null)return 0;
-  else {
-    hash=5381;
-    for(let i=0, _1=s.length-1;i<=_1;i++)hash=hashMix(hash, s[i].charCodeAt());
-    return hash;
-  }
-}
-function hashArray(o){
-  let h=-34948909;
-  for(let i=0, _1=length(o)-1;i<=_1;i++)h=hashMix(h, Hash(get(o, i)));
-  return h;
-}
-function hashObject(o){
-  if("GetHashCode"in o)return o.GetHashCode();
-  else {
-    const ____=hashMix;
-    const h=[0];
-    let k;
-    for(var k_1 in o)if(((key) => {
-      h[0]=____(____(h[0], hashString(key)), Hash(o[key]));
-      return false;
-    })(k_1))break;
-    return h[0];
-  }
-}
-function Compare(a, b){
-  if(a===b)return 0;
-  else {
-    const m=typeof a;
-    switch(m=="boolean"?1:m=="number"?1:m=="bigint"?1:m=="string"?1:m=="object"?2:m=="function"?3:m=="symbol"?4:0){
-      case 0:
-        return typeof b=="undefined"?0:-1;
-      case 1:
-        return a<b?-1:1;
-      case 2:
-        if(a===null)return -1;
-        else if(b===null)return 1;
-        else if("CompareTo"in a)return a.CompareTo(b);
-        else if("CompareTo0"in a)return a.CompareTo0(b);
-        else if(a instanceof Array&&b instanceof Array)return compareArrays(a, b);
-        else if(a instanceof Date&&b instanceof Date)return compareDates(a, b);
-        else {
-          const a_1=a;
-          const b_1=b;
-          const cmp=[0];
-          let k;
-          for(var k_2 in a_1)if(((k_3) =>!a_1.hasOwnProperty(k_3)?false:!b_1.hasOwnProperty(k_3)?(cmp[0]=1,true):(cmp[0]=Compare(a_1[k_3], b_1[k_3]),cmp[0]!==0))(k_2))break;
-          if(cmp[0]===0){
-            let k_1;
-            for(var k_3 in b_1)if(((k_4) =>!b_1.hasOwnProperty(k_4)?false:!a_1.hasOwnProperty(k_4)&&(cmp[0]=-1,true))(k_3))break;
-          }
-          return cmp[0];
-        }
-        break;
-      case 3:
-        return FailWith("Cannot compare function values.");
-      case 4:
-        return FailWith("Cannot compare symbol values.");
-    }
-  }
-}
-function hashMix(x, y){
-  return(x<<5)+x+y;
-}
-function compareArrays(a, b){
-  let cmp;
-  let i;
-  if(length(a)<length(b))return -1;
-  else if(length(a)>length(b))return 1;
-  else {
-    cmp=0;
-    i=0;
-    while(cmp===0&&i<length(a))
-      {
-        cmp=Compare(get(a, i), get(b, i));
-        i=i+1;
-      }
-    return cmp;
-  }
-}
-function compareDates(a, b){
-  return Compare(a.getTime(), b.getTime());
 }
 function get(arr, n){
   checkBounds(arr, n);
@@ -3067,9 +3109,6 @@ function parseQuotedString(format, pos){
 function parseNextChar(format, pos){
   return pos>=format.length-1?null:Some(format[pos+1]);
 }
-function TryParse(s, r){
-  return TryParse_2(s, -2147483648, 2147483647, r);
-}
 function DatePortion(d){
   const e=new Date(d);
   return(new Date(e.getFullYear(), e.getMonth(), e.getDate())).getTime();
@@ -3111,86 +3150,6 @@ function nonNegative(){
 }
 function insufficient(){
   return FailWith("The input sequence has an insufficient number of elements.");
-}
-function Int(){
-  set_counter(counter()+1);
-  return counter();
-}
-function Id_1(){
-  set_counter(counter()+1);
-  return"uid"+String(counter());
-}
-function set_counter(_1){
-  _c_6.counter=_1;
-}
-function counter(){
-  return _c_6.counter;
-}
-function Ready(Item1, Item2){
-  return{
-    $:2, 
-    $0:Item1, 
-    $1:Item2
-  };
-}
-function Forever(Item){
-  return{$:0, $0:Item};
-}
-function Waiting(Item1, Item2){
-  return{
-    $:3, 
-    $0:Item1, 
-    $1:Item2
-  };
-}
-function New_8(k, ct){
-  return{k:k, ct:ct};
-}
-function No(Item){
-  return{$:1, $0:Item};
-}
-function Ok(Item){
-  return{$:0, $0:Item};
-}
-function Cc(Item){
-  return{$:2, $0:Item};
-}
-let _c_2=Lazy((_i) => class $StartupCode_Concurrency {
-  static {
-    _c_2=_i(this);
-  }
-  static GetCT;
-  static Zero;
-  static defCTS;
-  static scheduler;
-  static noneCT;
-  static {
-    this.noneCT=New_9(false, []);
-    this.scheduler=new Scheduler();
-    this.defCTS=[new CancellationTokenSource()];
-    this.Zero=Return();
-    this.GetCT=(c) => {
-      c.k(Ok(c.ct));
-    };
-  }
-});
-function New_9(IsCancellationRequested, Registrations){
-  return{c:IsCancellationRequested, r:Registrations};
-}
-function Obsolete(sn){
-  let _1;
-  const m=sn.s;
-  if(m==null||(m!=null&&m.$==2?(_1=m.$1,false):m!=null&&m.$==3?(_1=m.$1,false):true))void 0;
-  else {
-    sn.s=null;
-    for(let i=0, _2=length(_1)-1;i<=_2;i++){
-      const o=get(_1, i);
-      if(typeof o=="object")(((sn_1) => {
-        Obsolete(sn_1);
-      })(o));
-      else o();
-    }
-  }
 }
 function Insert(elem, tree){
   const nodes=[];
@@ -3272,6 +3231,92 @@ function Sync_1(elem, dyn){
   iter_1((d) => {
     d.NSync(elem);
   }, dyn.DynNodes);
+}
+function TryParse_2(s, min, max_1, r){
+  const x=+s;
+  const ok=x===x-x%1&&x>=min&&x<=max_1;
+  if(ok)r.set(x);
+  return ok;
+}
+function Int(){
+  set_counter(counter()+1);
+  return counter();
+}
+function Id_1(){
+  set_counter(counter()+1);
+  return"uid"+String(counter());
+}
+function set_counter(_1){
+  _c_6.counter=_1;
+}
+function counter(){
+  return _c_6.counter;
+}
+function Ready(Item1, Item2){
+  return{
+    $:2, 
+    $0:Item1, 
+    $1:Item2
+  };
+}
+function Forever(Item){
+  return{$:0, $0:Item};
+}
+function Waiting(Item1, Item2){
+  return{
+    $:3, 
+    $0:Item1, 
+    $1:Item2
+  };
+}
+function New_8(k, ct){
+  return{k:k, ct:ct};
+}
+function No(Item){
+  return{$:1, $0:Item};
+}
+function Ok(Item){
+  return{$:0, $0:Item};
+}
+function Cc(Item){
+  return{$:2, $0:Item};
+}
+let _c_2=Lazy((_i) => class $StartupCode_Concurrency {
+  static {
+    _c_2=_i(this);
+  }
+  static GetCT;
+  static Zero;
+  static defCTS;
+  static scheduler;
+  static noneCT;
+  static {
+    this.noneCT=New_9(false, []);
+    this.scheduler=new Scheduler();
+    this.defCTS=[new CancellationTokenSource()];
+    this.Zero=Return();
+    this.GetCT=(c) => {
+      c.k(Ok(c.ct));
+    };
+  }
+});
+function New_9(IsCancellationRequested, Registrations){
+  return{c:IsCancellationRequested, r:Registrations};
+}
+function Obsolete(sn){
+  let _1;
+  const m=sn.s;
+  if(m==null||(m!=null&&m.$==2?(_1=m.$1,false):m!=null&&m.$==3?(_1=m.$1,false):true))void 0;
+  else {
+    sn.s=null;
+    for(let i=0, _2=length(_1)-1;i<=_2;i++){
+      const o=get(_1, i);
+      if(typeof o=="object")(((sn_1) => {
+        Obsolete(sn_1);
+      })(o));
+      else o();
+    }
+  }
 }
 class View { }
 class DocElemNode {
@@ -3862,12 +3907,6 @@ function Clear(a){
 }
 function IsWhiteSpace(c){
   return c.match(new RegExp("\\s"))!==null;
-}
-function TryParse_2(s, min, max_1, r){
-  const x=+s;
-  const ok=x===x-x%1&&x>=min&&x<=max_1;
-  if(ok)r.set(x);
-  return ok;
 }
 function New_11(PreviousNodes, Top){
   return{PreviousNodes:PreviousNodes, Top:Top};

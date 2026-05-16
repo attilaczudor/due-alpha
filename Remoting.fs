@@ -118,6 +118,10 @@ type UserHealthSettings = {
     JobType: string
     ExerciseFrequency: string
     ExerciseTypes: string
+    MealFrequency: int
+    DietType: string
+    Allergies: string
+    OtherAllergies: string
 }
 
 [<JavaScript>]
@@ -846,7 +850,7 @@ module Server =
         async {
             let ctx = WebSharper.Web.Remoting.GetContext()
             let! emailOpt = ctx.UserSession.GetLoggedInUser()
-            let empty = { Sex = ""; HeightCm = 0.0; WeightKg = 0.0; BloodType = ""; BirthYear = 0; BirthMonth = 0; BirthDay = 0; JobType = ""; ExerciseFrequency = ""; ExerciseTypes = "" }
+            let empty = { Sex = ""; HeightCm = 0.0; WeightKg = 0.0; BloodType = ""; BirthYear = 0; BirthMonth = 0; BirthDay = 0; JobType = ""; ExerciseFrequency = ""; ExerciseTypes = ""; MealFrequency = 3; DietType = ""; Allergies = ""; OtherAllergies = "" }
             match emailOpt with
             | None -> return empty
             | Some email ->
@@ -856,13 +860,26 @@ module Server =
                     let q = """
                         SELECT Sex, HeightCm, WeightKg, BloodType,
                                BirthYear, BirthMonth, BirthDay,
-                               JobType, ExerciseFrequency, ExerciseTypes
+                               JobType, ExerciseFrequency, ExerciseTypes,
+                               MealFrequency, DietType, Allergies, OtherAllergies
                         FROM UserSettingsHealth
                         WHERE UserId = (SELECT Id FROM Users WHERE Email = @e)
                     """
-                    let res = db.QueryFirstOrDefault<{| Sex: string; HeightCm: float; WeightKg: float; BloodType: string; BirthYear: int; BirthMonth: int; BirthDay: int; JobType: string; ExerciseFrequency: string; ExerciseTypes: string |}>(q, {| e = email |})
+                    let res = db.QueryFirstOrDefault<UserHealthSettings>(q, {| e = email |})
                     if isNull (box res) then return empty
-                    else return { Sex = res.Sex; HeightCm = res.HeightCm; WeightKg = res.WeightKg; BloodType = res.BloodType; BirthYear = res.BirthYear; BirthMonth = res.BirthMonth; BirthDay = res.BirthDay; JobType = res.JobType; ExerciseFrequency = res.ExerciseFrequency; ExerciseTypes = res.ExerciseTypes }
+                    else 
+                        let safeString s = if isNull (box s) then "" else s
+                        return { 
+                            res with
+                                Sex = safeString res.Sex
+                                BloodType = safeString res.BloodType
+                                JobType = safeString res.JobType
+                                ExerciseFrequency = safeString res.ExerciseFrequency
+                                ExerciseTypes = safeString res.ExerciseTypes
+                                DietType = safeString res.DietType
+                                Allergies = safeString res.Allergies
+                                OtherAllergies = safeString res.OtherAllergies 
+                        }
                 with _ -> return empty
         }
 
@@ -874,6 +891,7 @@ module Server =
             match emailOpt with
             | None -> return AuthResult.Error "Not authenticated"
             | Some email ->
+                printfn "SaveHealthSettings called for %s with: %A" email h
                 try
                     use db = Database.GetConnection()
                     db.Open()
@@ -881,10 +899,12 @@ module Server =
                         INSERT INTO UserSettingsHealth (
                             UserId, Sex, HeightCm, WeightKg, BloodType,
                             BirthYear, BirthMonth, BirthDay,
-                            JobType, ExerciseFrequency, ExerciseTypes
+                            JobType, ExerciseFrequency, ExerciseTypes,
+                            MealFrequency, DietType, Allergies, OtherAllergies
                         ) VALUES (
                             (SELECT Id FROM Users WHERE Email = @e),
-                            @sex, @h, @w, @bt, @by, @bm, @bd, @jt, @ef, @et
+                            @sex, @h, @w, @bt, @by, @bm, @bd, @jt, @ef, @et,
+                            @mf, @dt, @al, @oal
                         )
                         ON CONFLICT(UserId) DO UPDATE SET
                             Sex               = excluded.Sex,
@@ -896,9 +916,13 @@ module Server =
                             BirthDay          = excluded.BirthDay,
                             JobType           = excluded.JobType,
                             ExerciseFrequency = excluded.ExerciseFrequency,
-                            ExerciseTypes     = excluded.ExerciseTypes
+                            ExerciseTypes     = excluded.ExerciseTypes,
+                            MealFrequency     = excluded.MealFrequency,
+                            DietType          = excluded.DietType,
+                            Allergies         = excluded.Allergies,
+                            OtherAllergies    = excluded.OtherAllergies
                     """
-                    db.Execute(q, {| e = email; sex = h.Sex; h = h.HeightCm; w = h.WeightKg; bt = h.BloodType; by = h.BirthYear; bm = h.BirthMonth; bd = h.BirthDay; jt = h.JobType; ef = h.ExerciseFrequency; et = h.ExerciseTypes |}) |> ignore
+                    db.Execute(q, {| e = email; sex = h.Sex; h = h.HeightCm; w = h.WeightKg; bt = h.BloodType; by = h.BirthYear; bm = h.BirthMonth; bd = h.BirthDay; jt = h.JobType; ef = h.ExerciseFrequency; et = h.ExerciseTypes; mf = h.MealFrequency; dt = h.DietType; al = h.Allergies; oal = h.OtherAllergies |}) |> ignore
                     return AuthResult.Success true
                 with ex -> return AuthResult.Error ex.Message
         }

@@ -1,4 +1,4 @@
-export function New(Sex, HeightCm, WeightKg, BloodType, BirthYear, BirthMonth, BirthDay, JobType, ExerciseFrequency, ExerciseTypes){
+export function New(Sex, HeightCm, WeightKg, BloodType, BirthYear, BirthMonth, BirthDay, JobType, ExerciseFrequency, ExerciseTypes, MealFrequency, DietType, Allergies, OtherAllergies){
   return{
     Sex:Sex, 
     HeightCm:HeightCm, 
@@ -9,6 +9,10 @@ export function New(Sex, HeightCm, WeightKg, BloodType, BirthYear, BirthMonth, B
     BirthDay:BirthDay, 
     JobType:JobType, 
     ExerciseFrequency:ExerciseFrequency, 
-    ExerciseTypes:ExerciseTypes
+    ExerciseTypes:ExerciseTypes, 
+    MealFrequency:MealFrequency, 
+    DietType:DietType, 
+    Allergies:Allergies, 
+    OtherAllergies:OtherAllergies
   };
 }

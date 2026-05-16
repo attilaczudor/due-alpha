@@ -1,5 +1,6 @@
 import { DecodeUnion, Id, EncodeRecord, DecodeRecord, EncodeDateTime, DecodeDateTime } from "../WebSharper.Web/WebSharper.ClientSideJson.Provider.js"
 let Decoder_AuthResult;
+let Decoder_FSharpResult_2;
 let Encoder_GlobalSettings;
 let Decoder_PublicProfile;
 let Decoder_FSharpOption_1;
@@ -10,9 +11,11 @@ let Encoder_DailyRecord;
 let Decoder_DailyRecord;
 let Encoder_CalendarEvent;
 let Decoder_CalendarEvent;
-let Decoder_SettingsPage;
 export function DecodeJson_AuthResult(){
   return Decoder_AuthResult?Decoder_AuthResult:Decoder_AuthResult=(DecodeUnion(void 0, "$", [[0, [["$0", "Item", Id(), 0]]], [1, [["$0", "Item1", Id(), 0], ["$1", "Item2", Id(), 0]]], [2, []], [3, [["$0", "Item", Id(), 0]]]]))();
+}
+export function DecodeJson_FSharpResult_2(){
+  return Decoder_FSharpResult_2?Decoder_FSharpResult_2:Decoder_FSharpResult_2=(DecodeUnion(void 0, "$", [[0, [["$0", "ResultValue", Id(), 0]]], [1, [["$0", "ErrorValue", Id(), 0]]]]))();
 }
 export function EncodeJson_GlobalSettings(){
   return Encoder_GlobalSettings?Encoder_GlobalSettings:Encoder_GlobalSettings=(EncodeRecord(void 0, [["Username", Id(), 0], ["Email", Id(), 0], ["PendingEmail", Id(), 1], ["CalendarStartDay", Id(), 0], ["AvatarUrl", Id(), 1], ["IsProfilePublic", Id(), 0]]))();
@@ -43,7 +46,4 @@ export function EncodeJson_CalendarEvent(){
 }
 export function DecodeJson_CalendarEvent(){
   return Decoder_CalendarEvent?Decoder_CalendarEvent:Decoder_CalendarEvent=(DecodeRecord(void 0, [["Id", Id(), 0], ["Title", Id(), 0], ["Description", Id(), 0], ["EventDate", DecodeDateTime(), 0], ["EventType", Id(), 0], ["Icon", Id(), 0]]))();
-}
-export function DecodeJson_SettingsPage(){
-  return Decoder_SettingsPage?Decoder_SettingsPage:Decoder_SettingsPage=(DecodeUnion(void 0, "$", [[0, []], [1, []], [2, []], [3, []]]))();
 }
